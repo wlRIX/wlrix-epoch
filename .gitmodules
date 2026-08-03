@@ -30,3 +30,11 @@
 	path = wlrix-session
 	url = https://github.com/wlRIX/wlrix-session.git
 	branch = master
+[submodule "NWayland"]
+	path = NWayland
+	url = https://github.com/wlRIX/NWayland.git
+	branch = master
+[submodule "Avalonia"]
+	path = Avalonia
+	url = https://github.com/wlRIX/Avalonia.git
+	branch = add-wayland-app-id

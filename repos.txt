@@ -8,3 +8,9 @@ wlrix-idle            rust      idle manager (blank/lock/before-sleep, controlle
 wlrix-avalonia        csharp    Avalonia theme library (Indigo Magic look)
 wlrix-apps            csharp    user apps (toolchest, desks, ...)
 wlrix-assets          data      shared icons/cursors/wallpapers/palette
+
+# Upstream forks the C# side builds against. Build dependencies rather than parts of the
+# desktop: nothing from them is installed except by way of wlrix-apps. They sit beside the
+# components because wlrix-apps reaches them by relative path.
+NWayland              csharp    NWayland fork (protocol codegen fixes + wlrix-desks protocol)
+Avalonia              csharp    Avalonia fork (Wayland app id, CanResize on the wire)
