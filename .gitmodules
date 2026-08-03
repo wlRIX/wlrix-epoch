@@ -14,9 +14,17 @@
 	path = wlrix-compositor
 	url = https://github.com/wlRIX/wlrix-compositor.git
 	branch = master
+[submodule "wlrix-desktop"]
+	path = wlrix-desktop
+	url = https://github.com/wlRIX/wlrix-desktop.git
+	branch = master
 [submodule "wlrix-greeter"]
 	path = wlrix-greeter
 	url = https://github.com/wlRIX/wlrix-greeter.git
+	branch = master
+[submodule "wlrix-idle"]
+	path = wlrix-idle
+	url = https://github.com/wlRIX/wlrix-idle.git
 	branch = master
 [submodule "wlrix-session"]
 	path = wlrix-session

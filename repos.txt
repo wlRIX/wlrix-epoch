@@ -3,6 +3,8 @@
 wlrix-compositor      rust      Wayland compositor (4Dwm-style window management)
 wlrix-greeter         rust      greetd greeter (login screen)
 wlrix-session         rust      session manager (launches compositor + apps)
+wlrix-desktop         rust      desktop icons (layer-shell background surface)
+wlrix-idle            rust      idle manager (blank/lock/before-sleep, controller-aware)
 wlrix-avalonia        csharp    Avalonia theme library (Indigo Magic look)
 wlrix-apps            csharp    user apps (toolchest, desks, ...)
 wlrix-assets          data      shared icons/cursors/wallpapers/palette
