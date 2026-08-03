@@ -1,0 +1,24 @@
+[submodule "wlrix-apps"]
+	path = wlrix-apps
+	url = https://github.com/wlRIX/wlrix-apps.git
+	branch = master
+[submodule "wlrix-assets"]
+	path = wlrix-assets
+	url = https://github.com/wlRIX/wlrix-assets.git
+	branch = master
+[submodule "wlrix-avalonia"]
+	path = wlrix-avalonia
+	url = https://github.com/wlRIX/wlrix-avalonia.git
+	branch = master
+[submodule "wlrix-compositor"]
+	path = wlrix-compositor
+	url = https://github.com/wlRIX/wlrix-compositor.git
+	branch = master
+[submodule "wlrix-greeter"]
+	path = wlrix-greeter
+	url = https://github.com/wlRIX/wlrix-greeter.git
+	branch = master
+[submodule "wlrix-session"]
+	path = wlrix-session
+	url = https://github.com/wlRIX/wlrix-session.git
+	branch = master

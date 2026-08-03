@@ -24,8 +24,7 @@ Components aggregated here (added as submodules once they have remotes — see
 
 ## Usage
 
-Requires [`just`](https://github.com/casey/just) (`cargo install just`
-or your distro package).
+Requires [`just`](https://github.com/casey/just) (`cargo install just` or your distro package).
 
 ```sh
 just init      # add the component repos as submodules (once they have remotes)
