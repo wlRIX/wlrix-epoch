@@ -39,12 +39,19 @@ The greeter starts `wlrix-session`, which starts `wlrix-compositor`, both **by n
 the PATH greetd hands the session. That is the usual reason a build that runs by hand fails under greetd. The same goes
 for the apps: `wlrix-session` starts `wlrix-toolchest` and `wlrix-desks` by name too.
 
-### The greeter installs itself
+### The components install themselves
 
-Most components are one binary, and `install-rust` copies them. The greeter is not: it needs a system account, two PAM
-stacks, a systemd unit and a greetd configuration, and which of those are right depends on the distribution. That
-knowledge lives in `wlrix-greeter/Justfile`, and this repo calls into it rather than keeping a second copy that would
-drift the first time either side changed. `PREFIX`, `DESTDIR` and `PAM_FLAVOUR` are passed straight through.
+`install-rust` does not copy binaries. It runs `just install` in each component, with `PREFIX` and `DESTDIR` passed
+down.
+
+Three of the five are a single binary and would have fitted a loop here. The other two are not: the greeter needs a
+system account, two PAM stacks, a systemd unit and a greetd configuration, and the session a launcher, a systemd user
+target and the entry a display manager offers. That knowledge belongs with the files, and where a second copy of it
+lived here it drifted — this repo went on installing `wlrix-session/share/wayland-sessions/wlrix.desktop` for a while
+after the session had moved the file. One rule for all five is simpler than two rules and a list of which is which.
+
+`PAM_FLAVOR` travels in the environment rather than as a `just` variable: only the greeter reads it, and `just` refuses
+an override for a variable a justfile does not declare, so passing it as one would break the other four.
 
 Two steps are left to the administrator afterwards, and the greeter's install prints both: create the account with
 `systemd-sysusers && systemd-tmpfiles --create`, and make it the display manager with `systemctl enable

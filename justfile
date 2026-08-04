@@ -4,14 +4,16 @@
 # GitHub org/base used when wiring submodules. Override as needed.
 base := "https://github.com/wlRIX"
 
-# Rust components the epoch installs itself: one release binary each, named after its repo.
-rust_repos := "wlrix-compositor wlrix-session wlrix-desktop wlrix-idle"
-# Components that install themselves. The greeter needs a system account, two PAM stacks, a
-# systemd unit and a greetd configuration -- knowledge that belongs with the greeter, not
-# duplicated here where it would drift the first time either side changed.
-self_install_repos := "wlrix-greeter"
-# Everything Rust, for the operations that treat the components alike.
-all_rust_repos := rust_repos + " " + self_install_repos
+# The Rust components. Every one of them installs itself: `just install` in the component, with
+# this repo's prefix and staging root passed down.
+#
+# Not a loop of `install -Dm755` here. Three of them are a single binary and would fit one, but
+# the greeter brings a system account, two PAM stacks, a systemd unit and a greetd
+# configuration, and the session brings a launcher, a systemd user target and the entry a
+# display manager offers. Where a second copy of that knowledge lived here it drifted -- this
+# repo went on installing `wlrix-session/share/wayland-sessions/wlrix.desktop` after the session
+# had moved the file. One rule for all five, kept where the files are.
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-idle"
 
 cs_repos   := "wlrix-avalonia wlrix-apps"
 
@@ -55,7 +57,6 @@ destdir := env("DESTDIR", "")
 sub_rootdir := if destdir == "" { "" } else { absolute_path(destdir) }
 
 bindir     := destdir + prefix + "/bin"
-sessiondir := destdir + prefix + "/share/wayland-sessions"
 # A published .NET app is a directory of assemblies beside its launcher, not one file, so the
 # apps live here and `bindir` gets a shell wrapper for each.
 appdir     := destdir + prefix + "/lib/wlrix"
@@ -106,7 +107,7 @@ check-palette: palette
 
 # Build the Rust system components.
 build-rust:
-    for r in {{all_rust_repos}}; do \
+    for r in {{rust_repos}}; do \
         echo "==> building $r"; (cd $r && cargo build --release); \
     done
 
@@ -158,32 +159,29 @@ install: install-rust install-cs
     echo "The greeter's own install printed what is left to do: create its account,"
     echo "and enable wlrix-greeter.service as the display manager."
 
-# Install the Rust components and the session entry.
+# Install the Rust components, each through its own justfile.
 #
-# `pam-flavor` is passed straight through to whichever components want it; see the greeter's
-# own justfile for what it selects and why nothing is auto-detected.
-[doc("Install the Rust binaries and the session entry")]
+# The release-build check covers all of them before any is installed. A partial install is worse
+# than none: finding out at the fifth component that it was never built means unpicking four
+# that have already landed.
+#
+# `PAM_FLAVOR` goes down the environment rather than as a `just` variable. Only the greeter
+# reads it -- it is the one component shipping a PAM stack -- and `just` refuses a variable
+# override a justfile does not declare, so passing it as one would break the other four.
+[doc("Install the Rust components (build first; run as root)")]
 install-rust:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{all_rust_repos}}; do
+    for r in {{rust_repos}}; do
         if [ ! -x "$r/target/release/$r" ]; then
             echo "no release build of $r -- run 'just build-rust' first" >&2
             exit 1
         fi
     done
+    export PAM_FLAVOR='{{pam_flavor}}'
     for r in {{rust_repos}}; do
-        install -Dm755 "$r/target/release/$r" "{{bindir}}/$r"
-        echo "installed {{bindir}}/$r"
-    done
-    install -Dm644 wlrix-session/share/wayland-sessions/wlrix.desktop \
-        "{{sessiondir}}/wlrix.desktop"
-    echo "installed {{sessiondir}}/wlrix.desktop"
-    # The components that bring more than a binary put it down themselves.
-    for r in {{self_install_repos}}; do
-        echo "==> $r installs itself"
-        (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' \
-            pam-flavour='{{pam_flavor}}' install)
+        echo "==> $r"
+        (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' install)
     done
 
 # Publish and install the C# applications.
@@ -242,9 +240,6 @@ uninstall:
     #!/usr/bin/env bash
     set -euo pipefail
     for r in {{rust_repos}}; do
-        rm -f "{{bindir}}/$r"
-    done
-    for r in {{self_install_repos}}; do
         (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' uninstall)
     done
     for entry in {{cs_apps}}; do
@@ -254,7 +249,6 @@ uninstall:
     done
     # Only if this left it empty: the prefix may be shared with something else.
     rmdir "{{appdir}}" 2>/dev/null || true
-    rm -f "{{sessiondir}}/wlrix.desktop"
     echo "removed the wlRIX binaries, apps and session entry"
 
 # Launch the session (compositor + core apps) for local testing.
@@ -265,6 +259,6 @@ run:
 clean:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{all_rust_repos}}; do (cd "$r" && cargo clean); done
+    for r in {{rust_repos}}; do (cd "$r" && cargo clean); done
     for r in {{cs_repos}}; do (cd "$r" && dotnet clean -v q --nologo || true); done
     rm -rf wlrix-apps/localfeed
