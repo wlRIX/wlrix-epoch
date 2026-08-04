@@ -221,6 +221,15 @@ install-cs:
         config="$(ls "$staged"/*.runtimeconfig.json)"
         launcher="$(basename "$config" .runtimeconfig.json)"
 
+        # Cleared, not copied over. `cp` opens the destination for writing, which fails with
+        # ETXTBSY if that binary is running -- reinstalling while the desktop is up is the
+        # ordinary case, not an odd one. Unlinking the directory first is fine even then: the
+        # running process keeps its inode and the name is free to be recreated. (The Rust
+        # components do not hit this; `install` unlinks the target itself.)
+        #
+        # It also means a file a newer publish no longer produces goes away, rather than
+        # lingering in the tree for ever.
+        rm -rf "{{appdir}}/$name"
         install -d "{{appdir}}/$name"
         # `cp` rather than `install -D` per file: a published app has subdirectories
         # (satellite assemblies, native libraries) and they have to keep their shape.
