@@ -2,9 +2,17 @@
 # Requires `just` (https://github.com/casey/just).
 
 # GitHub org/base used when wiring submodules. Override as needed.
-base := "https://github.com/wlrix"
+base := "https://github.com/wlRIX"
 
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-idle"
+# Rust components the epoch installs itself: one release binary each, named after its repo.
+rust_repos := "wlrix-compositor wlrix-session wlrix-desktop wlrix-idle"
+# Components that install themselves. The greeter needs a system account, two PAM stacks, a
+# systemd unit and a greetd configuration -- knowledge that belongs with the greeter, not
+# duplicated here where it would drift the first time either side changed.
+self_install_repos := "wlrix-greeter"
+# Everything Rust, for the operations that treat the components alike.
+all_rust_repos := rust_repos + " " + self_install_repos
+
 cs_repos   := "wlrix-avalonia wlrix-apps"
 
 # Upstream forks the C# side builds against, carrying patches not yet upstream. Submodules like
@@ -19,6 +27,10 @@ forks := "NWayland Avalonia"
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
 cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard"
+
+# Which distribution's PAM stack the components that ship one should install. Passed through
+# to their own justfiles; `arch` and `debian` are not interchangeable and nothing is detected.
+pam_flavor := env("PAM_FLAVOR", "arch")
 
 # The patched Avalonia.Wayland the apps pin. Keep in step with
 # wlrix-apps/Directory.Packages.props; `feed` builds exactly this version.
@@ -35,6 +47,12 @@ rid := env("RID", `dotnet --info | sed -n 's/^ *RID: *//p' | head -1`)
 # because prefix is already absolute.
 prefix  := env("PREFIX", "/usr/local")
 destdir := env("DESTDIR", "")
+
+# What a delegated install is handed. `just`'s `absolute_path` resolves a relative path against
+# the justfile it is written in, so a relative DESTDIR would land inside the component's own
+# directory rather than here; absolutise it before passing it down. Empty has to stay empty --
+# absolutising "" would give the working directory, which is not "no staging root".
+sub_rootdir := if destdir == "" { "" } else { absolute_path(destdir) }
 
 bindir     := destdir + prefix + "/bin"
 sessiondir := destdir + prefix + "/share/wayland-sessions"
@@ -88,7 +106,7 @@ check-palette: palette
 
 # Build the Rust system components.
 build-rust:
-    for r in {{rust_repos}}; do \
+    for r in {{all_rust_repos}}; do \
         echo "==> building $r"; (cd $r && cargo build --release); \
     done
 
@@ -134,24 +152,21 @@ install: install-rust install-cs
     #!/usr/bin/env bash
     set -euo pipefail
     echo
-    echo "To have greetd start it, in /etc/greetd/config.toml:"
+    echo "The greeter, the session and the apps all start each other **by name**, so"
+    echo "{{prefix}}/bin has to be on the PATH greetd gives the session."
     echo
-    echo "    [terminal]"
-    echo "    vt = 1"
-    echo
-    echo "    [default_session]"
-    echo "    command = \"{{prefix}}/bin/wlrix-compositor -c wlrix-greeter\""
-    echo "    user = \"greeter\""
-    echo
-    echo "The greeter starts wlrix-session, which starts wlrix-compositor, both by"
-    echo "name -- so {{prefix}}/bin must be on the PATH greetd gives the session."
+    echo "The greeter's own install printed what is left to do: create its account,"
+    echo "and enable wlrix-greeter.service as the display manager."
 
 # Install the Rust components and the session entry.
+#
+# `pam-flavor` is passed straight through to whichever components want it; see the greeter's
+# own justfile for what it selects and why nothing is auto-detected.
 [doc("Install the Rust binaries and the session entry")]
 install-rust:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{rust_repos}}; do
+    for r in {{all_rust_repos}}; do
         if [ ! -x "$r/target/release/$r" ]; then
             echo "no release build of $r -- run 'just build-rust' first" >&2
             exit 1
@@ -164,6 +179,12 @@ install-rust:
     install -Dm644 wlrix-session/share/wayland-sessions/wlrix.desktop \
         "{{sessiondir}}/wlrix.desktop"
     echo "installed {{sessiondir}}/wlrix.desktop"
+    # The components that bring more than a binary put it down themselves.
+    for r in {{self_install_repos}}; do
+        echo "==> $r installs itself"
+        (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' \
+            pam-flavour='{{pam_flavor}}' install)
+    done
 
 # Publish and install the C# applications.
 #
@@ -223,6 +244,9 @@ uninstall:
     for r in {{rust_repos}}; do
         rm -f "{{bindir}}/$r"
     done
+    for r in {{self_install_repos}}; do
+        (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' uninstall)
+    done
     for entry in {{cs_apps}}; do
         name="${entry##*:}"
         rm -f "{{bindir}}/$name"
@@ -241,6 +265,6 @@ run:
 clean:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{rust_repos}}; do (cd "$r" && cargo clean); done
+    for r in {{all_rust_repos}}; do (cd "$r" && cargo clean); done
     for r in {{cs_repos}}; do (cd "$r" && dotnet clean -v q --nologo || true); done
     rm -rf wlrix-apps/localfeed
