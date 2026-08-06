@@ -47,7 +47,11 @@ rid := env("RID", `dotnet --info | sed -n 's/^ *RID: *//p' | head -1`)
 # Where `install` puts things. `PREFIX=/usr` for a system package; DESTDIR for a
 # staged install, as a package build does. Concatenated rather than path-joined
 # because prefix is already absolute.
-prefix  := env("PREFIX", "/usr/local")
+# `/usr`, matching what every component's own justfile defaults to. They have to agree: the
+# components are started **by name**, so a set installed under one prefix and a set under
+# another means PATH order decides which desktop actually runs -- and `/usr/local/bin` comes
+# first on most systems, so the stale copy wins and an install appears to do nothing.
+prefix  := env("PREFIX", "/usr")
 destdir := env("DESTDIR", "")
 
 # What a delegated install is handed. `just`'s `absolute_path` resolves a relative path against
@@ -158,6 +162,7 @@ install: install-rust install-cs
     echo
     echo "The greeter's own install printed what is left to do: create its account,"
     echo "and enable wlrix-greeter.service as the display manager."
+    just check-path
 
 # Install the Rust components, each through its own justfile.
 #
@@ -243,6 +248,34 @@ install-cs:
         chmod 755 "{{bindir}}/$name"
         echo "installed {{bindir}}/$name -> {{appdir}}/$name/$launcher"
     done
+
+# Warn if PATH would find some other copy of a component before the one just installed.
+#
+# Everything here starts everything else by name -- greetd runs `start-wlrix`, that runs
+# `wlrix-session`, that runs `wlrix-compositor` and the apps -- so a leftover set under a
+# different prefix does not conflict, it silently wins. The symptom is an install that
+# changes nothing at all, which is a miserable thing to debug.
+[doc("Check PATH finds the components that were just installed")]
+check-path:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -n "{{destdir}}" ]; then
+        exit 0    # a staged install is not on PATH and is not meant to be
+    fi
+    shadowed=0
+    for name in {{rust_repos}} start-wlrix; do
+        found="$(command -v "$name" 2>/dev/null || true)"
+        [ -z "$found" ] && continue
+        if [ "$found" != "{{bindir}}/$name" ]; then
+            echo "warning: PATH finds $found, not {{bindir}}/$name" >&2
+            shadowed=1
+        fi
+    done
+    if [ "$shadowed" = 1 ]; then
+        echo >&2
+        echo "Those older copies will run instead of what was just installed." >&2
+        echo "Remove them, or reinstall with the prefix they are under." >&2
+    fi
 
 # Remove what `install` put down. Leaves configuration and logs alone.
 uninstall:

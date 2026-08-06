@@ -14,14 +14,14 @@ sudo just install               # binaries, apps, and the session entry
 `install` deliberately does not build. It is normally run as root, and building as root leaves a target directory nobody
 can write to afterwards. Either half can be run on its own — `build-rust`/`install-rust`, `build-cs`/`install-cs`.
 
-| Variable     | Default      | Purpose                                                  |
-|--------------|--------------|----------------------------------------------------------|
-| `PREFIX`     | `/usr/local` | where things go                                          |
-| `DESTDIR`    | *(empty)*    | staged install, as a package build does                  |
-| `PAM_FLAVOR` | `arch`       | which PAM stack the greeter installs (`arch` / `debian`) |
+| Variable     | Default   | Purpose                                                  |
+|--------------|-----------|----------------------------------------------------------|
+| `PREFIX`     | `/usr`    | where things go                                          |
+| `DESTDIR`    | *(empty)* | staged install, as a package build does                  |
+| `PAM_FLAVOR` | `arch`    | which PAM stack the greeter installs (`arch` / `debian`) |
 
 ```sh
-sudo PREFIX=/usr just install   # a system package
+sudo just install               # a system install, into /usr
 DESTDIR=/tmp/stage just install # staged, touches nothing
 just uninstall                  # removes what install put down
 ```
@@ -38,6 +38,12 @@ What lands:
 The greeter starts `wlrix-session`, which starts `wlrix-compositor`, both **by name** — so `$PREFIX/bin` has to be on
 the PATH greetd hands the session. That is the usual reason a build that runs by hand fails under greetd. The same goes
 for the apps: `wlrix-session` starts `wlrix-toolchest` and `wlrix-desks` by name too.
+
+Being started by name is also why `PREFIX` defaults to `/usr` here, matching what each component's own justfile defaults
+to. Installing under two prefixes does not conflict — it leaves two complete sets, and PATH order picks the winner.
+`/usr/local/bin` comes before `/usr/bin` on most systems, so the *older* set keeps running and installing the new one
+appears to do nothing at all. `install` finishes by checking for exactly that, and `just check-path` runs the check on
+its own.
 
 ### The components install themselves
 
