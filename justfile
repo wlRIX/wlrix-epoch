@@ -13,7 +13,12 @@ base := "https://github.com/wlRIX"
 # display manager offers. Where a second copy of that knowledge lived here it drifted -- this
 # repo went on installing `wlrix-session/share/wayland-sessions/wlrix.desktop` after the session
 # had moved the file. One rule for all five, kept where the files are.
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-idle"
+#
+# `xdg-desktop-portal-wlrix` is in the list despite not being named `wlrix-*`: the name is fixed
+# by xdg-desktop-portal's backend discovery, not chosen. It installs five files of its own --
+# a .portal, a portals.conf, a D-Bus activation file and a systemd unit alongside the binary --
+# which is exactly the knowledge the comment above says to keep in the component.
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-idle xdg-desktop-portal-wlrix"
 
 cs_repos   := "wlrix-avalonia wlrix-apps"
 
@@ -28,7 +33,7 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.SourcePicker:wlrix-source-picker"
 
 # Which distribution's PAM stack the components that ship one should install. Passed through
 # to their own justfiles; `arch` and `debian` are not interchangeable and nothing is detected.

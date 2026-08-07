@@ -28,12 +28,13 @@ just uninstall                  # removes what install put down
 
 What lands:
 
-| Path                                                            |                                            |
-|-----------------------------------------------------------------|--------------------------------------------|
-| `$PREFIX/bin/wlrix-{compositor,greeter,session,desktop,idle}`   | the Rust components                        |
-| `$PREFIX/bin/wlrix-{toolchest,desks,console,settings-keyboard}` | wrappers for the C# apps                   |
-| `$PREFIX/lib/wlrix/<app>/`                                      | each C# app's published assemblies         |
-| `$PREFIX/share/wayland-sessions/wlrix.desktop`                  | the session entry a display manager offers |
+| Path                                                                          |                                                               |
+|-------------------------------------------------------------------------------|---------------------------------------------------------------|
+| `$PREFIX/bin/wlrix-{compositor,greeter,session,desktop,idle}`                 | the Rust components                                           |
+| `$PREFIX/bin/wlrix-{toolchest,desks,console,settings-keyboard,source-picker}` | wrappers for the C# apps                                      |
+| `$PREFIX/lib/wlrix/<app>/`                                                    | each C# app's published assemblies                            |
+| `$PREFIX/share/wayland-sessions/wlrix.desktop`                                | the session entry a display manager offers                    |
+| `$PREFIX/lib/xdg-desktop-portal-wlrix` (+ 4 data files)                       | the portal backend, bus-activated rather than started by name |
 
 The greeter starts `wlrix-session`, which starts `wlrix-compositor`, both **by name** — so `$PREFIX/bin` has to be on
 the PATH greetd hands the session. That is the usual reason a build that runs by hand fails under greetd. The same goes
@@ -94,18 +95,19 @@ pointers to the tested commit set and tag `epoch-X.Y.Z`.
 Components aggregated here (added as submodules once they have remotes — see
 `repos.txt`):
 
-| Component          | Language | Role                                        |
-|--------------------|----------|---------------------------------------------|
-| `wlrix-compositor` | Rust     | Wayland compositor (4Dwm-style WM)          |
-| `wlrix-greeter`    | Rust     | greetd greeter (login)                      |
-| `wlrix-session`    | Rust     | session manager                             |
-| `wlrix-desktop`    | Rust     | desktop icons                               |
-| `wlrix-idle`       | Rust     | idle timer                                  |
-| `wlrix-avalonia`   | C#       | Avalonia theme library                      |
-| `wlrix-apps`       | C#       | user apps (toolchest, desks, …)             |
-| `wlrix-assets`     | data     | shared icons/cursors/wallpapers/palette     |
-| `NWayland`         | C#       | fork: protocol codegen + wlrix-desks XML    |
-| `Avalonia`         | C#       | fork: Wayland app id, CanResize on the wire |
+| Component                  | Language | Role                                        |
+|----------------------------|----------|---------------------------------------------|
+| `wlrix-compositor`         | Rust     | Wayland compositor (4Dwm-style WM)          |
+| `wlrix-greeter`            | Rust     | greetd greeter (login)                      |
+| `wlrix-session`            | Rust     | session manager                             |
+| `wlrix-desktop`            | Rust     | desktop icons                               |
+| `wlrix-idle`               | Rust     | idle timer                                  |
+| `xdg-desktop-portal-wlrix` | Rust     | portal backend (screen sharing)             |
+| `wlrix-avalonia`           | C#       | Avalonia theme library                      |
+| `wlrix-apps`               | C#       | user apps (toolchest, desks, …)             |
+| `wlrix-assets`             | data     | shared icons/cursors/wallpapers/palette     |
+| `NWayland`                 | C#       | fork: protocol codegen + wlrix-desks XML    |
+| `Avalonia`                 | C#       | fork: Wayland app id, CanResize on the wire |
 
 The last two are **build dependencies**, not parts of the desktop: nothing from them is installed except by way of
 `wlrix-apps`. They are submodules here rather than sibling clones because `Wlrix.Desks.csproj` reaches the NWayland

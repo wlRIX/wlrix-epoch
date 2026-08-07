@@ -5,6 +5,7 @@ wlrix-greeter         rust      greetd greeter (login screen)
 wlrix-session         rust      session manager (launches compositor + apps)
 wlrix-desktop         rust      desktop icons (layer-shell background surface)
 wlrix-idle            rust      idle manager (blank/lock/before-sleep, controller-aware)
+xdg-desktop-portal-wlrix  rust  xdg-desktop-portal backend (screen sharing over PipeWire)
 wlrix-avalonia        csharp    Avalonia theme library (Indigo Magic look)
 wlrix-apps            csharp    user apps (toolchest, desks, ...)
 wlrix-assets          data      shared icons/cursors/wallpapers/palette
