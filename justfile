@@ -18,7 +18,7 @@ base := "https://github.com/wlRIX"
 # by xdg-desktop-portal's backend discovery, not chosen. It installs five files of its own --
 # a .portal, a portals.conf, a D-Bus activation file and a systemd unit alongside the binary --
 # which is exactly the knowledge the comment above says to keep in the component.
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-idle xdg-desktop-portal-wlrix"
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-idle wlrix-settings-daemon xdg-desktop-portal-wlrix"
 
 cs_repos   := "wlrix-avalonia wlrix-apps"
 
@@ -113,6 +113,81 @@ check-palette: palette
     git -C wlrix-greeter diff --exit-code -- src/theme/palette.rs
     git -C wlrix-desktop diff --exit-code -- src/theme/palette.rs
     echo "generated palette files are current"
+
+# Fail if the settings daemon's schema has drifted from the types it describes.
+#
+# `wlrix-settings-daemon/src/schema/table.rs` is a hand-kept copy of four other repos' serde
+# structs, because the repos build standalone and it cannot link them. A hand-kept copy drifts,
+# and with `#[serde(deny_unknown_fields)]` everywhere a drifted key is not a wrong setting --
+# it is the owner rejecting the *whole file* and the user silently getting built-in defaults.
+#
+# The daemon guards against that at runtime by running `--check-config` before every write. This
+# is the same check run ahead of time, against the schema's own dump, so drift is a red CI run
+# rather than a settings app that has quietly stopped working. This is the one place with all
+# the repos checked out, which is why it lives here -- the same reason as `check-palette`.
+#
+# Requires the components to be built: `just build-rust` first.
+[doc("Fail if the settings schema has drifted from the components' config types")]
+check-schema:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    daemon=wlrix-settings-daemon
+    if [ ! -d "$daemon" ]; then
+        echo "$daemon is not checked out here yet; skipping" >&2
+        exit 0
+    fi
+    dump=$(mktemp -d)/schema.toml
+    trap 'rm -rf "$(dirname "$dump")"' EXIT
+    "$daemon/target/release/$daemon" --dump-schema > "$dump"
+    # One namespace at a time: the dump is every file's settings in one document, and each
+    # component only accepts its own.
+    fail=0
+    check() {
+        local repo="$1" namespace="$2" section binary status
+        binary="$repo/target/release/$repo"
+        if [ ! -x "$binary" ]; then
+            echo "==> $namespace: no release build of $repo; run 'just build-rust'" >&2
+            fail=1
+            return
+        fi
+        section=$(awk -v ns="# ---- ${namespace}.toml ----" \
+            'index($0, ns) == 1 {on=1; next} /^# ---- /{on=0} on' "$dump")
+        printf '%s\n' "$section" > "$dump.$namespace"
+
+        # `timeout`, and no display for the child, because a component that predates
+        # `--check-config` does not necessarily *reject* it: `wlrix-compositor` ignored unknown
+        # arguments until the flag was added, so an old one here would start a compositor
+        # instead of checking a file. It did exactly that the first time this recipe ran
+        # against a stale submodule pin. Unsetting the display makes such a compositor fail to
+        # start at all, and the timeout catches whatever else might sit there; none of the four
+        # needs a display to parse a config file. Same reasoning as `validate()` in the daemon.
+        status=0
+        env -u WAYLAND_DISPLAY -u DISPLAY timeout 10 "$binary" --check-config "$dump.$namespace" \
+            || status=$?
+        # Exit 1 is the only one that means what this recipe is looking for. 2 is the usage
+        # error every wlRIX component answers an unknown argument with, and 124 is the timeout
+        # above -- both mean the binary predates `--check-config` rather than that the schema is
+        # wrong, and saying "the schema declares something it will not accept" for those would
+        # send the next person to the wrong file entirely.
+        case "$status" in
+            0) ;;
+            1)
+                echo "==> $namespace: the schema declares something $repo will not accept" >&2
+                fail=1
+                ;;
+            *)
+                echo "==> $namespace: $repo does not understand --check-config (exit $status);" >&2
+                echo "    it predates the flag. Bump the submodule pin, or 'just build-rust'." >&2
+                fail=1
+                ;;
+        esac
+    }
+    check wlrix-compositor compositor
+    check wlrix-desktop desktop
+    check wlrix-idle idle
+    check xdg-desktop-portal-wlrix portal
+    [ "$fail" -eq 0 ] && echo "the settings schema matches every component's config types"
+    exit "$fail"
 
 # Build the Rust system components.
 build-rust:

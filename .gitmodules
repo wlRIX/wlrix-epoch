@@ -41,3 +41,8 @@
 [submodule "xdg-desktop-portal-wlrix"]
 	path = xdg-desktop-portal-wlrix
 	url = https://github.com/wlRIX/xdg-desktop-portal-wlrix.git
+	branch = master
+[submodule "wlrix-settings-daemon"]
+	path = wlrix-settings-daemon
+	url = https://github.com/wlRIX/wlrix-settings-daemon.git
+	branch = master
