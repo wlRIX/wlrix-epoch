@@ -22,6 +22,15 @@ rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-
 
 cs_repos   := "wlrix-avalonia wlrix-apps"
 
+# The data repos, which install themselves the same way the components do. Only one so far, and
+# it installs only its wallpapers -- see its own justfile for why the palette and the (empty)
+# icon and cursor directories are deliberately left out.
+#
+# It has no build step, so it is absent from `build` and present here: `wlrix-bg`'s default
+# config names `share/wlrix/wallpapers/scatter.png`, and without this the desktop of a fresh
+# install comes up plain gray with a line in the log about a missing file.
+data_repos := "wlrix-assets"
+
 # Upstream forks the C# side builds against, carrying patches not yet upstream. Submodules like
 # the components, but they are build dependencies rather than parts of the desktop -- nothing
 # from them is installed except by way of wlrix-apps.
@@ -234,7 +243,7 @@ build-cs: feed
 #
 # Each Rust component's binary is named after its repo, so one loop covers them.
 [doc("Install everything and the session entry (build first; run as root)")]
-install: install-rust install-cs
+install: install-rust install-cs install-assets
     #!/usr/bin/env bash
     set -euo pipefail
     echo
@@ -266,6 +275,19 @@ install-rust:
     done
     export PAM_FLAVOR='{{pam_flavor}}'
     for r in {{rust_repos}}; do
+        echo "==> $r"
+        (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' install)
+    done
+
+# Install the shared data files.
+#
+# Its own justfile, for the same reason the components have one: what belongs in `share` and
+# under which layout is that repo's knowledge, not this one's. There is nothing to build first.
+[doc("Install the shared data files (run as root)")]
+install-assets:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for r in {{data_repos}}; do
         echo "==> $r"
         (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' install)
     done
@@ -362,7 +384,7 @@ check-path:
 uninstall:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{rust_repos}}; do
+    for r in {{rust_repos}} {{data_repos}}; do
         (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' uninstall)
     done
     for entry in {{cs_apps}}; do
