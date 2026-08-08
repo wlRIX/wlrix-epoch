@@ -46,3 +46,7 @@
 	path = wlrix-settings-daemon
 	url = https://github.com/wlRIX/wlrix-settings-daemon.git
 	branch = master
+[submodule "wlrix-bg"]
+	path = wlrix-bg
+	url = https://github.com/wlRIX/wlrix-bg.git
+	branch = master

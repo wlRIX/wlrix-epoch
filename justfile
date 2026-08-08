@@ -18,7 +18,7 @@ base := "https://github.com/wlRIX"
 # by xdg-desktop-portal's backend discovery, not chosen. It installs five files of its own --
 # a .portal, a portals.conf, a D-Bus activation file and a systemd unit alongside the binary --
 # which is exactly the knowledge the comment above says to keep in the component.
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-idle wlrix-settings-daemon xdg-desktop-portal-wlrix"
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-settings-daemon xdg-desktop-portal-wlrix"
 
 cs_repos   := "wlrix-avalonia wlrix-apps"
 
@@ -116,7 +116,7 @@ check-palette: palette
 
 # Fail if the settings daemon's schema has drifted from the types it describes.
 #
-# `wlrix-settings-daemon/src/schema/table.rs` is a hand-kept copy of four other repos' serde
+# `wlrix-settings-daemon/src/schema/table.rs` is a hand-kept copy of five other repos' serde
 # structs, because the repos build standalone and it cannot link them. A hand-kept copy drifts,
 # and with `#[serde(deny_unknown_fields)]` everywhere a drifted key is not a wrong setting --
 # it is the owner rejecting the *whole file* and the user silently getting built-in defaults.
@@ -182,6 +182,7 @@ check-schema:
                 ;;
         esac
     }
+    check wlrix-bg background
     check wlrix-compositor compositor
     check wlrix-desktop desktop
     check wlrix-idle idle

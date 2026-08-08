@@ -101,7 +101,9 @@ Components aggregated here (added as submodules once they have remotes — see
 | `wlrix-greeter`            | Rust     | greetd greeter (login)                      |
 | `wlrix-session`            | Rust     | session manager                             |
 | `wlrix-desktop`            | Rust     | desktop icons                               |
+| `wlrix-bg`                 | Rust     | desktop background (wallpaper)              |
 | `wlrix-idle`               | Rust     | idle timer                                  |
+| `wlrix-settings-daemon`    | Rust     | settings service (writes the config files)  |
 | `xdg-desktop-portal-wlrix` | Rust     | portal backend (screen sharing)             |
 | `wlrix-avalonia`           | C#       | Avalonia theme library                      |
 | `wlrix-apps`               | C#       | user apps (toolchest, desks, …)             |
