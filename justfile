@@ -23,12 +23,13 @@ rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-
 cs_repos   := "wlrix-avalonia wlrix-apps"
 
 # The data repos, which install themselves the same way the components do. Only one so far, and
-# it installs only its wallpapers -- see its own justfile for why the palette and the (empty)
-# icon and cursor directories are deliberately left out.
+# it installs its wallpapers and the sgi cursor theme -- see its own justfile for why the palette
+# and the (still empty) icon directory are deliberately left out.
 #
-# It has no build step, so it is absent from `build` and present here: `wlrix-bg`'s default
-# config names `share/wlrix/wallpapers/scatter.png`, and without this the desktop of a fresh
-# install comes up plain gray with a line in the log about a missing file.
+# It has no build step, so it is absent from `build` and present here: `wlrix-bg`'s default config
+# names `share/wlrix/wallpapers/scatter.png` and the compositor's names the `sgi` cursor theme, so
+# without this the desktop of a fresh install comes up plain gray, with a stranger's pointer over
+# it and two lines in the log about what is missing.
 data_repos := "wlrix-assets"
 
 # Upstream forks the C# side builds against, carrying patches not yet upstream. Submodules like
@@ -50,7 +51,7 @@ pam_flavor := env("PAM_FLAVOR", "arch")
 
 # The patched Avalonia.Wayland the apps pin. Keep in step with
 # wlrix-apps/Directory.Packages.props; `feed` builds exactly this version.
-wayland_version := "12.1.1-wlrix.1"
+wayland_version := "12.1.1-wlrix.2"
 
 # Which platform the apps are published for. Avalonia carries native libraries for every
 # platform it supports -- Windows, macOS, Android, several Linux architectures -- and a publish
