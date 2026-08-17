@@ -43,7 +43,19 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.SourcePicker:wlrix-source-picker"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.SourcePicker:wlrix-source-picker Wlrix.SoftwareManager:wlrix-software-manager"
+
+# The privileged helper, in the same `<project>:<installed name>` shape so it can be published
+# by the same loop -- but kept out of `cs_apps` because it is not one. Nothing launches it from
+# a menu or the session; only the Software Manager does, through pkexec, and only ever at the
+# absolute path its polkit action names. See `polkit_policy`.
+cs_helpers := "Wlrix.Packages.Helper:wlrix-pkg-helper"
+
+# The polkit action that lets the Software Manager run that helper as root. Without it installed
+# the app runs, browses and does nothing else: `PkexecRunner` refuses to start a transaction it
+# cannot find the helper for, and polkit would fall back to prompting for the admin password on
+# every single one.
+polkit_policy := "wlrix-apps/src/Wlrix.Packages.Helper/polkit/com.wlrix.softwaremanager.policy"
 
 # Which distribution's PAM stack the components that ship one should install. Passed through
 # to their own justfiles; `arch` and `debian` are not interchangeable and nothing is detected.
@@ -79,6 +91,7 @@ bindir     := destdir + prefix + "/bin"
 # A published .NET app is a directory of assemblies beside its launcher, not one file, so the
 # apps live here and `bindir` gets a shell wrapper for each.
 appdir     := destdir + prefix + "/lib/wlrix"
+polkitdir  := destdir + prefix + "/share/polkit-1/actions"
 
 # List available recipes.
 default:
@@ -316,7 +329,7 @@ install-cs:
         echo "no localfeed -- run 'just feed' first" >&2
         exit 1
     fi
-    for entry in {{cs_apps}}; do
+    for entry in {{cs_apps}} {{cs_helpers}}; do
         project="${entry%%:*}"
         name="${entry##*:}"
         staged="$(mktemp -d)"
@@ -353,6 +366,20 @@ install-cs:
         echo "installed {{bindir}}/$name -> {{appdir}}/$name/$launcher"
     done
 
+    # The polkit action for the helper just installed. 644 and root-owned: polkit reads it, and
+    # an action file a user could edit would let them rewrite the rules that gate root.
+    #
+    # Its `exec.path` annotation is the literal `/usr/bin/wlrix-pkg-helper`, which is also what
+    # `PkexecRunner` looks for -- neither is prefix-aware, so under any other prefix the two
+    # agree with each other and disagree with where the helper actually is.
+    if [ "{{prefix}}" != "/usr" ]; then
+        echo "warning: PREFIX={{prefix}}, but the polkit action and the Software Manager both" >&2
+        echo "         name /usr/bin/wlrix-pkg-helper. Package management will not work." >&2
+    fi
+    install -d "{{polkitdir}}"
+    install -m 644 "{{polkit_policy}}" "{{polkitdir}}/"
+    echo "installed {{polkitdir}}/$(basename {{polkit_policy}})"
+
 # Warn if PATH would find some other copy of a component before the one just installed.
 #
 # Everything here starts everything else by name -- greetd runs `start-wlrix`, that runs
@@ -388,11 +415,12 @@ uninstall:
     for r in {{rust_repos}} {{data_repos}}; do
         (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' uninstall)
     done
-    for entry in {{cs_apps}}; do
+    for entry in {{cs_apps}} {{cs_helpers}}; do
         name="${entry##*:}"
         rm -f "{{bindir}}/$name"
         rm -rf "{{appdir}}/$name"
     done
+    rm -f "{{polkitdir}}/$(basename {{polkit_policy}})"
     # Only if this left it empty: the prefix may be shared with something else.
     rmdir "{{appdir}}" 2>/dev/null || true
     echo "removed the wlRIX binaries, apps and session entry"
