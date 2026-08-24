@@ -50,3 +50,7 @@
 	path = wlrix-bg
 	url = https://github.com/wlRIX/wlrix-bg.git
 	branch = master
+[submodule "wlrix-ui"]
+	path = wlrix-ui
+	url = https://github.com/wlRIX/wlrix-ui.git
+	branch = master

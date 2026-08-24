@@ -20,6 +20,15 @@ base := "https://github.com/wlRIX"
 # which is exactly the knowledge the comment above says to keep in the component.
 rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-settings-daemon xdg-desktop-portal-wlrix"
 
+# The Rust library the components share. Separate from `rust_repos` because it is a library:
+# it installs nothing, so it has no place in `install`, and it ships inside the binaries that
+# depend on it. It is built and tested here so a change to it is caught before four consumers
+# bump their pinned rev onto it.
+#
+# Consumers depend on it by git rev, not by path, so each of them still builds from a fresh
+# standalone clone. See `link-ui` for working on both sides at once.
+lib_repos  := "wlrix-ui"
+
 cs_repos   := "wlrix-avalonia wlrix-apps"
 
 # The data repos, which install themselves the same way the components do. Only one so far, and
@@ -103,7 +112,7 @@ default:
 init:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{rust_repos}} {{cs_repos}} wlrix-assets; do
+    for r in {{rust_repos}} {{lib_repos}} {{cs_repos}} wlrix-assets; do
         git submodule add {{base}}/$r.git $r || true
     done
     # The forks are not under the wlRIX org's naming, and Avalonia is on a branch of its own.
@@ -122,6 +131,133 @@ build: build-rust build-cs
 palette:
     cd wlrix-assets && dotnet run --project tools/palettegen -- ..
 
+# Run the compositor nested inside the running session, isolated from it.
+#
+# Three env vars, and the third is the awkward one.
+#
+# `XDG_CONFIG_HOME` and `XDG_STATE_HOME` keep the nested instance off the live session's
+# config, `desks.toml` and `outputs.toml`. Both have `$HOME` fallbacks, so they must be *set*
+# rather than unset.
+#
+# `XDG_RUNTIME_DIR` has to move too, and not for tidiness: `wlrix-settings-daemon` finds the
+# compositor *through* `$XDG_RUNTIME_DIR/wlrix-compositor.pid`, so a shared runtime dir would
+# send the live session's reload signals to the throwaway instance instead. But that is also
+# where the host's Wayland socket lives -- so the host display is passed by absolute path,
+# which libwayland accepts for any `WAYLAND_DISPLAY` containing a slash.
+#
+# Nothing here reaches the real session. Verify after a run: the live pidfile and
+# `~/.local/state/wlrix/desks.toml` must be untouched.
+#
+#     just nested                       # release build, classic
+#     just nested gotham                # ...in another scheme
+#
+# Clients connect with XDG_RUNTIME_DIR=<sandbox>/run WAYLAND_DISPLAY=wayland-1, and `grim`
+# under the same two variables screenshots it.
+[doc("Run the compositor nested in the current session, fully isolated")]
+nested scheme='classic':
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [ -z "${WAYLAND_DISPLAY:-}" ]; then
+        echo "no host WAYLAND_DISPLAY; this recipe nests inside a running session" >&2
+        exit 1
+    fi
+    sandbox="${XDG_RUNTIME_DIR:-/tmp}/wlrix-nested"
+    rm -rf "$sandbox"
+    mkdir -p "$sandbox"/{config/wlrix,state/wlrix,run}
+    chmod 700 "$sandbox/run"
+    printf '[appearance]\npalette = "%s"\n' '{{scheme}}' \
+        > "$sandbox/config/wlrix/compositor.toml"
+    binary=wlrix-compositor/target/release/wlrix-compositor
+    if [ ! -x "$binary" ]; then
+        echo "no release build -- run 'just build-rust' first" >&2
+        exit 1
+    fi
+    echo "sandbox: $sandbox"
+    echo "clients: XDG_RUNTIME_DIR=$sandbox/run WAYLAND_DISPLAY=wayland-1 <command>"
+    echo
+    exec env \
+        XDG_CONFIG_HOME="$sandbox/config" \
+        XDG_STATE_HOME="$sandbox/state" \
+        WAYLAND_DISPLAY="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" \
+        XDG_RUNTIME_DIR="$sandbox/run" \
+        "$binary"
+
+# The components that depend on `wlrix-ui`.
+#
+# Not all of `rust_repos`: `wlrix-bg` draws wallpapers with no chrome and no text,
+# `wlrix-idle` and `wlrix-session` draw nothing at all, and the settings daemon and the portal
+# have no screen.
+ui_consumers := "wlrix-compositor wlrix-greeter wlrix-desktop"
+
+# Build the components against the `wlrix-ui` checkout beside them instead of its pinned rev.
+#
+# The pin is what lets each component build from a fresh standalone clone, and that is worth
+# keeping -- but it makes editing both sides at once a commit-and-bump for every change. This
+# writes cargo's `[patch]` into each consumer, which is the supported way to say "use the one
+# next door". These are single-crate repos, so the repo root is the workspace root and that is
+# where the patch has to go.
+#
+# Expect `Cargo.lock` to go dirty while linked: a patch rewrites the source entry, and all
+# three consumers track their lock. `unlink-ui` puts it back.
+[doc("Point the components at the local wlrix-ui checkout")]
+link-ui:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for r in {{ui_consumers}}; do
+        mkdir -p "$r/.cargo"
+        # printf rather than a heredoc: an unindented heredoc body would leave the recipe as
+        # far as just is concerned, and `[patch."..."]` then reads as a malformed attribute.
+        printf '%s\n' \
+            '# Written by `just link-ui`; removed by `just unlink-ui`. Not checked in.' \
+            '[patch."https://github.com/wlRIX/wlrix-ui"]' \
+            'wlrix-ui = { path = "../wlrix-ui" }' \
+            > "$r/.cargo/config.toml"
+        echo "linked $r -> ../wlrix-ui"
+    done
+    echo
+    echo "Cargo.lock will go dirty in each; 'just unlink-ui' restores it."
+
+[doc("Undo link-ui and restore the pinned rev")]
+unlink-ui:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for r in {{ui_consumers}}; do
+        rm -f "$r/.cargo/config.toml"
+        rmdir "$r/.cargo" 2>/dev/null || true
+        # Regenerate rather than `git checkout`: while linked, the lock records the *path*
+        # override with no `source` line at all, and committing that is a lock a fresh clone
+        # cannot resolve. Restoring the old one is not enough either -- the pinned rev may
+        # have moved since. Ask cargo for the entry the manifest now names.
+        (cd "$r" && cargo update --quiet -p wlrix-ui 2>/dev/null) || true
+        if ! grep -A2 'name = "wlrix-ui"' "$r/Cargo.lock" | grep -q 'source = "git'; then
+            echo "    $r: Cargo.lock still has no git source -- is the pinned rev pushed?" >&2
+        fi
+        echo "unlinked $r"
+    done
+
+# Move every consumer's pinned `wlrix-ui` rev to what is checked out here.
+#
+# Without this a palette edit is a five-commit ritual: change the JSON, regenerate, commit
+# wlrix-ui, then hand-edit and commit three more Cargo.toml files. Run it after committing in
+# wlrix-ui, then commit the bumps.
+[doc("Bump the pinned wlrix-ui rev in every consumer")]
+bump-ui:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    rev=$(git -C wlrix-ui rev-parse HEAD)
+    echo "wlrix-ui is at $rev"
+    for r in {{ui_consumers}}; do
+        if ! grep -q 'wlrix-ui' "$r/Cargo.toml"; then
+            echo "    $r does not depend on wlrix-ui yet; skipping"
+            continue
+        fi
+        # Only the rev on the wlrix-ui line: smithay is pinned the same way in the compositor
+        # and must not be touched.
+        sed -i -E "/^wlrix-ui\s*=/ s|rev = \"[0-9a-f]+\"|rev = \"$rev\"|" "$r/Cargo.toml"
+        (cd "$r" && cargo update --quiet -p wlrix-ui)
+        echo "    bumped $r"
+    done
+
 # Fail if the checked-in generated files are stale relative to the palette JSON.
 #
 # Each diff runs *inside* the component repo. Running it here would check nothing:
@@ -132,10 +268,18 @@ check-palette: palette
     #!/usr/bin/env bash
     set -euo pipefail
     git -C wlrix-avalonia diff --exit-code -- src/Wlrix.Avalonia/Schemes
-    git -C wlrix-compositor diff --exit-code -- src/palette.rs
-    git -C wlrix-greeter diff --exit-code -- src/theme/palette.rs
-    git -C wlrix-desktop diff --exit-code -- src/theme/palette.rs
+    if [ -d wlrix-ui ]; then
+        git -C wlrix-ui diff --exit-code -- src/palette/generated.rs
+    else
+        echo "wlrix-ui is not checked out here yet; skipping its palette" >&2
+    fi
     echo "generated palette files are current"
+
+    # There were three more lines here, one per component. The generator emitted a different
+    # hand-picked subset of the palette into each of them, in two incompatible color types;
+    # `wlrix-ui` now gets the whole thing once and the components read it from there. Until a
+    # component has migrated its own `palette.rs` is an orphan -- still correct, no longer
+    # generated, and deleted when that component moves.
 
 # Fail if the settings daemon's schema has drifted from the types it describes.
 #
@@ -215,8 +359,16 @@ check-schema:
 
 # Build the Rust system components.
 build-rust:
-    for r in {{rust_repos}}; do \
-        echo "==> building $r"; (cd $r && cargo build --release); \
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # The library first, and tested rather than merely built: it is the one place in the Rust
+    # tree where the bevel rule, the text wrapping and the palette values can be checked
+    # without a display, and a break here is a break in all four components at once.
+    for r in {{lib_repos}}; do
+        echo "==> testing $r"; (cd "$r" && cargo test --all-features --quiet)
+    done
+    for r in {{rust_repos}}; do
+        echo "==> building $r"; (cd "$r" && cargo build --release)
     done
 
 # Assemble wlrix-apps/localfeed: the packages the apps need that nuget.org does not have.
@@ -433,6 +585,6 @@ run:
 clean:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{rust_repos}}; do (cd "$r" && cargo clean); done
+    for r in {{rust_repos}} {{lib_repos}}; do (cd "$r" && cargo clean); done
     for r in {{cs_repos}}; do (cd "$r" && dotnet clean -v q --nologo || true); done
     rm -rf wlrix-apps/localfeed
