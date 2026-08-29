@@ -7,7 +7,9 @@ wlrix-desktop         rust      desktop icons (layer-shell background surface)
 wlrix-bg              rust      desktop background (wallpaper, incl. the SGI/XPM formats IRIX shipped)
 wlrix-idle            rust      idle manager (blank/lock/before-sleep, controller-aware)
 wlrix-settings-daemon rust      settings service (the only writer of the wlRIX config files, over D-Bus)
-xdg-desktop-portal-wlrix  rust  xdg-desktop-portal backend (screen sharing over PipeWire)
+xdg-desktop-portal-wlrix  rust  xdg-desktop-portal backend (screen sharing and screenshots)
+wlrix-screenshot      rust      screenshots (region overlay, save and clipboard)
+
 wlrix-avalonia        csharp    Avalonia theme library (Indigo Magic look)
 wlrix-apps            csharp    user apps (toolchest, desks, ...)
 wlrix-assets          data      shared icons/cursors/wallpapers/palette
