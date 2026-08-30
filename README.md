@@ -28,13 +28,13 @@ just uninstall                  # removes what install put down
 
 What lands:
 
-| Path                                                                          |                                                               |
-|-------------------------------------------------------------------------------|---------------------------------------------------------------|
-| `$PREFIX/bin/wlrix-{compositor,greeter,session,desktop,idle}`                 | the Rust components                                           |
-| `$PREFIX/bin/wlrix-{toolchest,desks,console,settings-keyboard,source-picker}` | wrappers for the C# apps                                      |
-| `$PREFIX/lib/wlrix/<app>/`                                                    | each C# app's published assemblies                            |
-| `$PREFIX/share/wayland-sessions/wlrix.desktop`                                | the session entry a display manager offers                    |
-| `$PREFIX/lib/xdg-desktop-portal-wlrix` (+ 4 data files)                       | the portal backend, bus-activated rather than started by name |
+| Path                                                                                                            |                                                               |
+|-----------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| `$PREFIX/bin/wlrix-{compositor,greeter,session,desktop,idle}`                                                   | the Rust components                                           |
+| `$PREFIX/bin/wlrix-{toolchest,desks,console,settings-keyboard,settings-windows,source-picker,software-manager}` | wrappers for the C# apps                                      |
+| `$PREFIX/lib/wlrix/<app>/`                                                                                      | each C# app's published assemblies                            |
+| `$PREFIX/share/wayland-sessions/wlrix.desktop`                                                                  | the session entry a display manager offers                    |
+| `$PREFIX/lib/xdg-desktop-portal-wlrix` (+ 4 data files)                                                         | the portal backend, bus-activated rather than started by name |
 
 The greeter starts `wlrix-session`, which starts `wlrix-compositor`, both **by name** — so `$PREFIX/bin` has to be on
 the PATH greetd hands the session. That is the usual reason a build that runs by hand fails under greetd. The same goes
