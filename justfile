@@ -52,7 +52,7 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.SourcePicker:wlrix-source-picker Wlrix.SoftwareManager:wlrix-software-manager"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.SourcePicker:wlrix-source-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown"
 
 # The privileged helper, in the same `<project>:<installed name>` shape so it can be published
 # by the same loop -- but kept out of `cs_apps` because it is not one. Nothing launches it from
@@ -379,8 +379,10 @@ build-rust:
 # drop a fixed-size window's maximize button -- has to be reshaped after packing; see
 # `tools/pack-avalonia-wayland.py` for why.
 #
-# The feed is gitignored in wlrix-apps, so a fresh checkout has to run this before anything C#
-# will restore. `build-cs` does.
+# The feed is committed in wlrix-apps, so a fresh checkout already restores and this is only
+# needed after changing `wlrix-avalonia` or the Avalonia fork -- and whatever it writes has to be
+# committed there, or CI restores against a package that exists on nobody else's disk.
+# `build-cs` still runs it, so a workspace build always packs what is next door.
 [doc("Assemble wlrix-apps/localfeed (the packages nuget.org does not have)")]
 feed:
     #!/usr/bin/env bash
