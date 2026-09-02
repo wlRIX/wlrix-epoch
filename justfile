@@ -18,7 +18,7 @@ base := "https://github.com/wlRIX"
 # by xdg-desktop-portal's backend discovery, not chosen. It installs five files of its own --
 # a .portal, a portals.conf, a D-Bus activation file and a systemd unit alongside the binary --
 # which is exactly the knowledge the comment above says to keep in the component.
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot"
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray"
 
 # The Rust library the components share. Separate from `rust_repos` because it is a library:
 # it installs nothing, so it has no place in `install`, and it ships inside the binaries that
@@ -186,8 +186,10 @@ nested scheme='classic':
 #
 # Not all of `rust_repos`: `wlrix-bg` draws wallpapers with no chrome and no text,
 # `wlrix-idle` and `wlrix-session` draw nothing at all, and the settings daemon and the portal
-# have no screen.
-ui_consumers := "wlrix-compositor wlrix-greeter wlrix-desktop"
+# have no screen. Everything else in `rust_repos` is here -- check a new component's Cargo.toml
+# for the `wlrix-ui` pin rather than assuming, since a repo missing from this list still builds
+# and only `link-ui` and `bump-ui` quietly skip it.
+ui_consumers := "wlrix-compositor wlrix-greeter wlrix-desktop wlrix-screenshot wlrix-tray"
 
 # Build the components against the `wlrix-ui` checkout beside them instead of its pinned rev.
 #
@@ -355,6 +357,7 @@ check-schema:
     check wlrix-idle idle
     check xdg-desktop-portal-wlrix portal
     check wlrix-screenshot screenshot
+    check wlrix-tray tray
     [ "$fail" -eq 0 ] && echo "the settings schema matches every component's config types"
     exit "$fail"
 

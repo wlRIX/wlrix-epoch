@@ -58,3 +58,7 @@
 	path = wlrix-screenshot
 	url = https://github.com/wlRIX/wlrix-screenshot.git
 	branch = master
+[submodule "wlrix-tray"]
+	path = wlrix-tray
+	url = https://github.com/wlRIX/wlrix-tray.git
+	branch = master

@@ -105,6 +105,8 @@ Components aggregated here (added as submodules once they have remotes — see
 | `wlrix-idle`               | Rust     | idle timer                                  |
 | `wlrix-settings-daemon`    | Rust     | settings service (writes the config files)  |
 | `xdg-desktop-portal-wlrix` | Rust     | portal backend (screen sharing)             |
+| `wlrix-screenshot`         | Rust     | screenshots (region overlay)                |
+| `wlrix-tray`               | Rust     | application indicator tray (SNI host)       |
 | `wlrix-avalonia`           | C#       | Avalonia theme library                      |
 | `wlrix-apps`               | C#       | user apps (toolchest, desks, …)             |
 | `wlrix-assets`             | data     | shared icons/cursors/wallpapers/palette     |
