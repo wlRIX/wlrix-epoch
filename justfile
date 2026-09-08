@@ -131,6 +131,25 @@ build: build-rust build-cs
 palette:
     cd wlrix-assets && dotnet run --project tools/palettegen -- ..
 
+# Regenerate the GTK theme's titlebar assets and per-scheme stylesheets.
+#
+# Separate from `palette` because the generator is a different program in a different repo: the
+# palette comes from `wlrix-assets`, but the *frame* is the compositor's, and only it can say
+# what a titlebar button looks like. `decoration_quads` is a list of colored rectangles, so each
+# asset is that list written out as SVG -- lossless, and scaling to any HiDPI factor in a way no
+# screenshot of a 1x display would.
+#
+# Run it after a palette edit as well as after a frame change: the assets carry the scheme's
+# colors baked in, one directory per scheme.
+#
+# What the theme reaches: a GTK application picks the scheme up when it *starts*. GTK does not
+# reload gtk.css when it changes, so switching schemes leaves already-open GTK windows on the old
+# one until they are restarted -- unlike the compositor, the desktop, the tray and the C# apps,
+# which all repaint at once.
+[doc("Regenerate the GTK theme from the compositor's window frame")]
+gtk-theme:
+    cd wlrix-compositor && cargo run --release --quiet -- --dump-gtk-theme ../wlrix-assets/themes/wlRIX
+
 # Run the compositor nested inside the running session, isolated from it.
 #
 # Three env vars, and the third is the awkward one.
@@ -265,6 +284,18 @@ bump-ui:
 # Each diff runs *inside* the component repo. Running it here would check nothing:
 # the components are separate repos -- symlinks today, submodules later -- so their
 # files are not this repo's to diff.
+# Fail if the checked-in GTK theme is stale relative to the frame or the palette.
+#
+# The diff runs inside `wlrix-assets`, which is where the output is committed -- the same
+# arrangement as `check-palette`, and for the same reason: the components are separate repos and
+# their files are not this one's to diff.
+[doc("Fail if the generated GTK theme is stale")]
+check-gtk-theme: gtk-theme
+    #!/usr/bin/env bash
+    set -euo pipefail
+    git -C wlrix-assets diff --exit-code -- themes/wlRIX
+    echo "the generated GTK theme is current"
+
 [doc("Fail if the generated palette files are stale")]
 check-palette: palette
     #!/usr/bin/env bash
