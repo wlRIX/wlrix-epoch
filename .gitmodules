@@ -62,3 +62,7 @@
 	path = wlrix-tray
 	url = https://github.com/wlRIX/wlrix-tray.git
 	branch = master
+[submodule "wlrix-gtk-config"]
+	path = wlrix-gtk-config
+	url = https://github.com/wlRIX/wlrix-gtk-config.git
+	branch = master

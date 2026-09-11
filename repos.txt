@@ -11,6 +11,8 @@ xdg-desktop-portal-wlrix  rust  xdg-desktop-portal backend (screen sharing and s
 wlrix-screenshot      rust      screenshots (region overlay, save and clipboard)
 wlrix-tray            rust      application indicator tray (StatusNotifierItem host)
 
+wlrix-gtk-config      c         GTK 3 module (reloads the user gtk.css on a scheme change; 30px headerbars)
+
 wlrix-avalonia        csharp    Avalonia theme library (Indigo Magic look)
 wlrix-apps            csharp    user apps (toolchest, desks, ...)
 wlrix-assets          data      shared icons/cursors/wallpapers/palette

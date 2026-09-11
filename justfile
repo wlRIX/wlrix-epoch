@@ -31,6 +31,12 @@ lib_repos  := "wlrix-ui"
 
 cs_repos   := "wlrix-avalonia wlrix-apps"
 
+# The C component. One so far, and it is C rather than Rust because a GTK 3 module is a C ABI:
+# it is found by name and entered through `gtk_module_init`, and both things it does -- patching
+# GtkHeaderBar's class and reloading a GtkCssProvider -- are GObject glue that Rust would wrap
+# without making any safer. Its own justfile builds it with `cc`; there is no cargo here.
+c_repos    := "wlrix-gtk-config"
+
 # The data repos, which install themselves the same way the components do. Only one so far, and
 # it installs its wallpapers and the sgi cursor theme -- see its own justfile for why the palette
 # and the (still empty) icon directory are deliberately left out.
@@ -112,7 +118,7 @@ default:
 init:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{rust_repos}} {{lib_repos}} {{cs_repos}} wlrix-assets; do
+    for r in {{rust_repos}} {{lib_repos}} {{c_repos}} {{cs_repos}} wlrix-assets; do
         git submodule add {{base}}/$r.git $r || true
     done
     # The forks are not under the wlRIX org's naming, and Avalonia is on a branch of its own.
@@ -121,7 +127,7 @@ init:
     git submodule update --init --recursive
 
 # Build everything.
-build: build-rust build-cs
+build: build-rust build-c build-cs
 
 # Regenerate the theme scheme dictionaries and the compositor palette module
 # from wlrix-assets/palette/*.json. The generated files are checked in, so this
@@ -406,6 +412,24 @@ build-rust:
         echo "==> building $r"; (cd "$r" && cargo build --release)
     done
 
+# Build the C component.
+#
+# Tested here rather than only built, unlike the Rust components: its tests are the only thing
+# that can check what it claims about GTK, and they need a display -- so they are skipped
+# without one rather than failed, since this recipe also runs on build machines that have none.
+[doc("Build the C components")]
+build-c:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for r in {{c_repos}}; do
+        echo "==> building $r"; (cd "$r" && just release)
+        if [ -n "${WAYLAND_DISPLAY:-}${DISPLAY:-}" ]; then
+            echo "==> testing $r"; (cd "$r" && just test)
+        else
+            echo "    skipping $r tests: no display"
+        fi
+    done
+
 # Assemble wlrix-apps/localfeed: the packages the apps need that nuget.org does not have.
 #
 # Two kinds. The wlRIX theme and dialogs come straight out of `wlrix-avalonia`. The patched
@@ -446,7 +470,7 @@ build-cs: feed
 #
 # Each Rust component's binary is named after its repo, so one loop covers them.
 [doc("Install everything and the session entry (build first; run as root)")]
-install: install-rust install-cs install-assets
+install: install-rust install-c install-cs install-assets
     #!/usr/bin/env bash
     set -euo pipefail
     echo
@@ -478,6 +502,19 @@ install-rust:
     done
     export PAM_FLAVOR='{{pam_flavor}}'
     for r in {{rust_repos}}; do
+        echo "==> $r"
+        (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' install)
+    done
+
+# Install the C component.
+#
+# Its own justfile, like every other component: where a GTK module has to land -- and that it
+# skips the `3.0.0/` binary-version directory the input methods use -- is that repo's knowledge.
+[doc("Install the C components (build first; run as root)")]
+install-c:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for r in {{c_repos}}; do
         echo "==> $r"
         (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' install)
     done
@@ -623,5 +660,6 @@ clean:
     #!/usr/bin/env bash
     set -euo pipefail
     for r in {{rust_repos}} {{lib_repos}}; do (cd "$r" && cargo clean); done
+    for r in {{c_repos}}; do (cd "$r" && just clean); done
     for r in {{cs_repos}}; do (cd "$r" && dotnet clean -v q --nologo || true); done
     rm -rf wlrix-apps/localfeed
