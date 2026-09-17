@@ -58,7 +58,7 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.SourcePicker:wlrix-source-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files"
 
 # The privileged helper, in the same `<project>:<installed name>` shape so it can be published
 # by the same loop -- but kept out of `cs_apps` because it is not one. Nothing launches it from
@@ -78,7 +78,7 @@ pam_flavor := env("PAM_FLAVOR", "arch")
 
 # The patched Avalonia.Wayland the apps pin. Keep in step with
 # wlrix-apps/Directory.Packages.props; `feed` builds exactly this version.
-wayland_version := "12.1.1-wlrix.2"
+wayland_version := "12.1.1-wlrix.7"
 
 # Which platform the apps are published for. Avalonia carries native libraries for every
 # platform it supports -- Windows, macOS, Android, several Linux architectures -- and a publish
@@ -350,7 +350,10 @@ check-schema:
     fail=0
     check() {
         local repo="$1" namespace="$2" section binary status
-        binary="$repo/target/release/$repo"
+        # A third argument is the binary, for a component that is not a Rust crate at the top
+        # of its own repo. wlrix-files is the one: it is a C# project inside wlrix-apps, and
+        # everything else about the check is identical.
+        binary="${3:-$repo/target/release/$repo}"
         if [ ! -x "$binary" ]; then
             echo "==> $namespace: no release build of $repo; run 'just build-rust'" >&2
             fail=1
@@ -395,6 +398,7 @@ check-schema:
     check xdg-desktop-portal-wlrix portal
     check wlrix-screenshot screenshot
     check wlrix-tray tray
+    check wlrix-apps files wlrix-apps/src/Wlrix.Files/bin/Release/net10.0/wlrix-files
     [ "$fail" -eq 0 ] && echo "the settings schema matches every component's config types"
     exit "$fail"
 
@@ -558,6 +562,17 @@ install-cs:
     for entry in {{cs_apps}} {{cs_helpers}}; do
         project="${entry%%:*}"
         name="${entry##*:}"
+
+        # The submodule pointer and this file move independently -- during a bisect, or in the
+        # window between a component landing and the epoch being bumped to it. Loudly skipped
+        # rather than failing the whole install, and loudly rather than silently, because an
+        # application quietly not installing is a miserable thing to notice later.
+        if [ ! -d "wlrix-apps/src/$project" ]; then
+            echo "warning: wlrix-apps has no $project; skipping $name" >&2
+            echo "         (the submodule is older than this justfile)" >&2
+            continue
+        fi
+
         staged="$(mktemp -d)"
         echo "==> publishing $project as $name for {{rid}}"
         dotnet publish "wlrix-apps/src/$project" -c Release --nologo \
@@ -591,6 +606,16 @@ install-cs:
         chmod 755 "{{bindir}}/$name"
         echo "installed {{bindir}}/$name -> {{appdir}}/$name/$launcher"
     done
+
+    # The applications that own a file type also need a .desktop entry, and those are defined
+    # in wlrix-apps beside the projects they describe. Delegated rather than duplicated here:
+    # two definitions of the same entry are two definitions that can drift, and the loop above
+    # has no idea which applications have one.
+    if (cd wlrix-apps && just --show install-desktop) >/dev/null 2>&1; then
+        (cd wlrix-apps && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' install-desktop)
+    else
+        echo "warning: wlrix-apps has no install-desktop recipe; no file types registered" >&2
+    fi
 
     # The polkit action for the helper just installed. 644 and root-owned: polkit reads it, and
     # an action file a user could edit would let them rewrite the rules that gate root.
@@ -646,6 +671,11 @@ uninstall:
         rm -f "{{bindir}}/$name"
         rm -rf "{{appdir}}/$name"
     done
+    # And the desktop entries, from the repo that owns them. It removes the payloads too, which
+    # the loop above has already done -- both are `rm -f` and neither minds going second.
+    if (cd wlrix-apps && just --show uninstall) >/dev/null 2>&1; then
+        (cd wlrix-apps && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' uninstall)
+    fi
     rm -f "{{polkitdir}}/$(basename {{polkit_policy}})"
     # Only if this left it empty: the prefix may be shared with something else.
     rmdir "{{appdir}}" 2>/dev/null || true
