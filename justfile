@@ -78,7 +78,7 @@ pam_flavor := env("PAM_FLAVOR", "arch")
 
 # The patched Avalonia.Wayland the apps pin. Keep in step with
 # wlrix-apps/Directory.Packages.props; `feed` builds exactly this version.
-wayland_version := "12.1.1-wlrix.7"
+wayland_version := "12.1.1-wlrix.8"
 
 # Which platform the apps are published for. Avalonia carries native libraries for every
 # platform it supports -- Windows, macOS, Android, several Linux architectures -- and a publish
