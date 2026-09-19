@@ -38,8 +38,8 @@ cs_repos   := "wlrix-avalonia wlrix-apps"
 c_repos    := "wlrix-gtk-config"
 
 # The data repos, which install themselves the same way the components do. Only one so far, and
-# it installs its wallpapers and the sgi cursor theme -- see its own justfile for why the palette
-# and the (still empty) icon directory are deliberately left out.
+# it installs its wallpapers, its minimized-window icon pictures, the sgi cursor theme and the
+# wlrix icon theme -- see its own justfile for why the palette is deliberately left out.
 #
 # It has no build step, so it is absent from `build` and present here: `wlrix-bg`'s default config
 # names `share/wlrix/wallpapers/scatter.png` and the compositor's names the `sgi` cursor theme, so
