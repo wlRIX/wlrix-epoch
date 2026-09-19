@@ -601,6 +601,13 @@ install-cs:
         rm -rf "$staged"
 
         install -d "{{bindir}}"
+        # Unlinked first, because `>` follows a symlink and writes through it. wlrix-apps'
+        # own `install` recipe points {{bindir}}/$name at the payload's binary with `ln -sfn`,
+        # so for an application installed both ways this wrote the launcher *into* the payload
+        # directory, over the very binary it execs -- leaving a script that execs itself and an
+        # application that starts, hangs, and never shows a window. `ln -sfn` replaces a symlink
+        # rather than following it, which is why only this half of the pair went wrong.
+        rm -f "{{bindir}}/$name"
         printf '#!/bin/sh\nexec "%s/lib/wlrix/%s/%s" "$@"\n' \
             "{{prefix}}" "$name" "$launcher" > "{{bindir}}/$name"
         chmod 755 "{{bindir}}/$name"
