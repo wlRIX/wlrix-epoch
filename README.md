@@ -14,11 +14,11 @@ sudo just install               # binaries, apps, and the session entry
 `install` deliberately does not build. It is normally run as root, and building as root leaves a target directory nobody
 can write to afterwards. Either half can be run on its own — `build-rust`/`install-rust`, `build-cs`/`install-cs`.
 
-| Variable     | Default   | Purpose                                                  |
-|--------------|-----------|----------------------------------------------------------|
-| `PREFIX`     | `/usr`    | where things go                                          |
-| `DESTDIR`    | *(empty)* | staged install, as a package build does                  |
-| `PAM_FLAVOR` | `arch`    | which PAM stack the greeter installs (`arch` / `debian`) |
+| Variable     | Default   | Purpose                                                             |
+|--------------|-----------|---------------------------------------------------------------------|
+| `PREFIX`     | `/usr`    | where things go                                                     |
+| `DESTDIR`    | *(empty)* | staged install, as a package build does                             |
+| `PAM_FLAVOR` | `arch`    | which PAM stacks the greeter and locker install (`arch` / `debian`) |
 
 ```sh
 sudo just install               # a system install, into /usr
@@ -30,7 +30,7 @@ What lands:
 
 | Path                                                                                                                                      |                                                               |
 |-------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
-| `$PREFIX/bin/wlrix-{compositor,greeter,session,desktop,bg,idle,tray,screenshot,settings-daemon}`                                          | the Rust components                                           |
+| `$PREFIX/bin/wlrix-{compositor,greeter,session,desktop,bg,idle,lock,tray,screenshot,settings-daemon}`                                     | the Rust components                                           |
 | `$PREFIX/bin/wlrix-{toolchest,desks,console,settings-keyboard,settings-windows,settings-schemes,source-picker,software-manager,shutdown}` | wrappers for the C# apps                                      |
 | `$PREFIX/lib/wlrix/<app>/`                                                                                                                | each C# app's published assemblies                            |
 | `$PREFIX/share/wayland-sessions/wlrix.desktop`                                                                                            | the session entry a display manager offers                    |
@@ -57,8 +57,8 @@ target and the entry a display manager offers. That knowledge belongs with the f
 lived here it drifted — this repo went on installing `wlrix-session/share/wayland-sessions/wlrix.desktop` for a while
 after the session had moved the file. One rule for all five is simpler than two rules and a list of which is which.
 
-`PAM_FLAVOR` travels in the environment rather than as a `just` variable: only the greeter reads it, and `just` refuses
-an override for a variable a justfile does not declare, so passing it as one would break the other four.
+`PAM_FLAVOR` travels in the environment rather than as a `just` variable: only the greeter and the locker read it, and
+`just` refuses an override for a variable a justfile does not declare, so passing it as one would break the rest.
 
 Two steps are left to the administrator afterwards, and the greeter's install prints both: create the account with
 `systemd-sysusers && systemd-tmpfiles --create`, and make it the display manager with `systemctl enable
@@ -103,6 +103,7 @@ Components aggregated here (added as submodules once they have remotes — see
 | `wlrix-desktop`            | Rust     | desktop icons                               |
 | `wlrix-bg`                 | Rust     | desktop background (wallpaper)              |
 | `wlrix-idle`               | Rust     | idle timer                                  |
+| `wlrix-lock`               | Rust     | screen locker (ext-session-lock)            |
 | `wlrix-settings-daemon`    | Rust     | settings service (writes the config files)  |
 | `xdg-desktop-portal-wlrix` | Rust     | portal backend (screen sharing)             |
 | `wlrix-screenshot`         | Rust     | screenshots (region overlay)                |

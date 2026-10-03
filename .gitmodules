@@ -66,3 +66,7 @@
 	path = wlrix-gtk-config
 	url = https://github.com/wlRIX/wlrix-gtk-config.git
 	branch = master
+[submodule "wlrix-lock"]
+	path = wlrix-lock
+	url = https://github.com/wlRIX/wlrix-lock.git
+	branch = master

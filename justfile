@@ -18,7 +18,7 @@ base := "https://github.com/wlRIX"
 # by xdg-desktop-portal's backend discovery, not chosen. It installs five files of its own --
 # a .portal, a portals.conf, a D-Bus activation file and a systemd unit alongside the binary --
 # which is exactly the knowledge the comment above says to keep in the component.
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray"
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-lock wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray"
 
 # The Rust library the components share. Separate from `rust_repos` because it is a library:
 # it installs nothing, so it has no place in `install`, and it ships inside the binaries that
@@ -78,7 +78,7 @@ pam_flavor := env("PAM_FLAVOR", "arch")
 
 # The patched Avalonia.Wayland the apps pin. Keep in step with
 # wlrix-apps/Directory.Packages.props; `feed` builds exactly this version.
-wayland_version := "12.1.1-wlrix.8"
+wayland_version := "12.1.1-wlrix.10"
 
 # Which platform the apps are published for. Avalonia carries native libraries for every
 # platform it supports -- Windows, macOS, Android, several Linux architectures -- and a publish
@@ -214,7 +214,7 @@ nested scheme='classic':
 # have no screen. Everything else in `rust_repos` is here -- check a new component's Cargo.toml
 # for the `wlrix-ui` pin rather than assuming, since a repo missing from this list still builds
 # and only `link-ui` and `bump-ui` quietly skip it.
-ui_consumers := "wlrix-compositor wlrix-greeter wlrix-desktop wlrix-screenshot wlrix-tray"
+ui_consumers := "wlrix-compositor wlrix-greeter wlrix-desktop wlrix-lock wlrix-screenshot wlrix-tray"
 
 # Build the components against the `wlrix-ui` checkout beside them instead of its pinned rev.
 #
@@ -395,6 +395,7 @@ check-schema:
     check wlrix-compositor compositor
     check wlrix-desktop desktop
     check wlrix-idle idle
+    check wlrix-lock lock
     check xdg-desktop-portal-wlrix portal
     check wlrix-screenshot screenshot
     check wlrix-tray tray
@@ -452,8 +453,14 @@ feed:
     feed="$PWD/wlrix-apps/localfeed"
     mkdir -p "$feed"
     echo "==> packing wlrix-avalonia"
-    (cd wlrix-avalonia && dotnet pack -c Release --nologo)
-    find wlrix-avalonia/src -name 'Wlrix.Avalonia*.nupkg' -exec cp {} "$feed/" \;
+    # Into a fresh directory rather than each project's bin/, which keeps every version ever
+    # packed: copying out of there put long-gone builds (Wlrix.Avalonia 0.0.0 through 0.2.0)
+    # into the feed beside the current one. What lands here is exactly what this run produced.
+    # The samples pack too; the name filter leaves them out.
+    packed=$(mktemp -d)
+    trap 'rm -rf "$packed"' EXIT
+    (cd wlrix-avalonia && dotnet pack -c Release --nologo -o "$packed")
+    cp "$packed"/Wlrix.Avalonia*.nupkg "$feed/"
     echo "==> packing the patched Avalonia.Wayland"
     ./tools/pack-avalonia-wayland.py --source Avalonia \
         --version {{wayland_version}} --out "$feed"
@@ -491,9 +498,9 @@ install: install-rust install-c install-cs install-assets
 # than none: finding out at the fifth component that it was never built means unpicking four
 # that have already landed.
 #
-# `PAM_FLAVOR` goes down the environment rather than as a `just` variable. Only the greeter
-# reads it -- it is the one component shipping a PAM stack -- and `just` refuses a variable
-# override a justfile does not declare, so passing it as one would break the other four.
+# `PAM_FLAVOR` goes down the environment rather than as a `just` variable. Only the greeter and
+# the locker read it -- they are the two components shipping a PAM stack -- and `just` refuses a
+# variable override a justfile does not declare, so passing it as one would break the rest.
 [doc("Install the Rust components (build first; run as root)")]
 install-rust:
     #!/usr/bin/env bash
