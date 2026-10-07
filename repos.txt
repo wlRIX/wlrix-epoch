@@ -21,5 +21,5 @@ wlrix-assets          data      shared icons/cursors/wallpapers/palette
 # Upstream forks the C# side builds against. Build dependencies rather than parts of the
 # desktop: nothing from them is installed except by way of wlrix-apps. They sit beside the
 # components because wlrix-apps reaches them by relative path.
-NWayland              csharp    NWayland fork (protocol codegen fixes + wlrix-desks protocol)
+NWayland              csharp    NWayland fork (protocol codegen fixes; carries wlrix-protocols as a submodule)
 Avalonia              csharp    Avalonia fork (Wayland app id, CanResize on the wire)
