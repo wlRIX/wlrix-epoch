@@ -58,7 +58,7 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock"
 
 # The privileged helper, in the same `<project>:<installed name>` shape so it can be published
 # by the same loop -- but kept out of `cs_apps` because it is not one. Nothing launches it from
@@ -107,6 +107,11 @@ bindir     := destdir + prefix + "/bin"
 # apps live here and `bindir` gets a shell wrapper for each.
 appdir     := destdir + prefix + "/lib/wlrix"
 polkitdir  := destdir + prefix + "/share/polkit-1/actions"
+
+# Where `build-cs` publishes each C# application, one directory per installed name, for
+# `install-cs` to copy from. Here in the epoch rather than in each project's bin/, so the whole
+# set is one directory that `clean` can drop and nothing installs from a stale per-project tree.
+publishdir := "publish"
 
 # List available recipes.
 default:
@@ -465,10 +470,47 @@ feed:
     ./tools/pack-avalonia-wayland.py --source Avalonia \
         --version {{wayland_version}} --out "$feed"
 
-# Build the C# solutions. The feed has to exist first or restore cannot resolve the apps.
+# Build the C# solutions, then publish each application for `install-cs` to copy.
+#
+# The feed has to exist first or restore cannot resolve the apps.
+#
+# Publishing is done here and not at install time because install is normally run as root, and
+# a publish as root leaves bin/ and obj/ trees owned by root -- after which every ordinary build
+# fails on them with "access denied". A `dotnet build` tree is not enough to install from: it
+# leaves out the runtime config and dependency manifest an app needs to start from somewhere
+# other than its project directory.
+#
+# Framework-dependent, so the target needs the .NET runtime installed. Self-contained would
+# bundle a copy of the runtime with every application, which is a lot of megabytes to spend on a
+# desktop whose own components are already built from source. Published for one platform for
+# the same reason; see `rid`.
+[doc("Build the C# solutions and publish the apps")]
 build-cs: feed
-    for r in {{cs_repos}}; do \
-        echo "==> building $r"; (cd $r && dotnet build -c Release --nologo); \
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for r in {{cs_repos}}; do
+        echo "==> building $r"; (cd "$r" && dotnet build -c Release --nologo)
+    done
+    for entry in {{cs_apps}} {{cs_helpers}}; do
+        project="${entry%%:*}"
+        name="${entry##*:}"
+
+        # The submodule pointer and this file move independently -- during a bisect, or in the
+        # window between a component landing and the epoch being bumped to it. Loudly skipped
+        # rather than failing the whole build; `install-cs` says so again where it matters.
+        if [ ! -d "wlrix-apps/src/$project" ]; then
+            echo "warning: wlrix-apps has no $project; not publishing $name" >&2
+            echo "         (the submodule is older than this justfile)" >&2
+            continue
+        fi
+
+        # Cleared, not published over, so a file a newer publish no longer produces does not
+        # linger and get installed for ever.
+        out="{{publishdir}}/$name"
+        rm -rf "$out"
+        echo "==> publishing $project as $name for {{rid}}"
+        dotnet publish "wlrix-apps/src/$project" -c Release --nologo \
+            -r {{rid}} --self-contained false -o "$out"
     done
 
 # Install the Rust components and the session entry.
@@ -543,29 +585,32 @@ install-assets:
         (cd "$r" && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' install)
     done
 
-# Publish and install the C# applications.
+# Install the C# applications `build-cs` published.
 #
 # A published .NET app is a directory -- the launcher plus its assemblies -- so each one goes
 # under `$PREFIX/lib/wlrix/<name>/` and gets a one-line wrapper in `$PREFIX/bin`. Not a symlink:
 # the .NET host finds an app's assemblies beside `/proc/self/exe`, which follows symlinks, so a
 # link in `bin` would send it looking for them in `bin`.
 #
-# Framework-dependent, so the target needs the .NET runtime installed. Self-contained would
-# bundle a copy of the runtime with each of four apps, which is a lot of megabytes to spend on a
-# desktop whose own components are already built from source. Published for one platform for
-# the same reason; see `rid`.
-#
-# This publishes rather than reusing `build-cs`'s output, because a `dotnet build` tree is not
-# self-sufficient -- it leaves out the runtime config and dependency manifest an app needs to
-# start from somewhere other than its project directory.
-[doc("Publish and install the C# apps")]
+# Deliberately does not publish, for the same reason `install` does not build: see `build-cs`.
+[doc("Install the C# apps (build first; run as root)")]
 install-cs:
     #!/usr/bin/env bash
     set -euo pipefail
-    if [ ! -d wlrix-apps/localfeed ]; then
-        echo "no localfeed -- run 'just feed' first" >&2
-        exit 1
-    fi
+    # Every published app is checked before any is installed, as `install-rust` does: finding
+    # out halfway through that one was never published leaves a desktop half old and half new.
+    missing=0
+    for entry in {{cs_apps}} {{cs_helpers}}; do
+        project="${entry%%:*}"
+        name="${entry##*:}"
+        [ -d "wlrix-apps/src/$project" ] || continue
+        if ! ls "{{publishdir}}/$name"/*.runtimeconfig.json >/dev/null 2>&1; then
+            echo "no published build of $project -- run 'just build-cs' first" >&2
+            missing=1
+        fi
+    done
+    [ "$missing" = 0 ] || exit 1
+
     for entry in {{cs_apps}} {{cs_helpers}}; do
         project="${entry%%:*}"
         name="${entry##*:}"
@@ -580,15 +625,12 @@ install-cs:
             continue
         fi
 
-        staged="$(mktemp -d)"
-        echo "==> publishing $project as $name for {{rid}}"
-        dotnet publish "wlrix-apps/src/$project" -c Release --nologo \
-            -r {{rid}} --self-contained false -o "$staged"
+        published="{{publishdir}}/$name"
 
         # The launcher is named after the project's *assembly*, which is the project's to
         # choose and mostly is not the project name -- three of the four set `<AssemblyName>`.
         # Publish always writes `<assembly>.runtimeconfig.json` beside it, so that names it.
-        config="$(ls "$staged"/*.runtimeconfig.json)"
+        config="$(ls "$published"/*.runtimeconfig.json)"
         launcher="$(basename "$config" .runtimeconfig.json)"
 
         # Cleared, not copied over. `cp` opens the destination for writing, which fails with
@@ -603,9 +645,8 @@ install-cs:
         install -d "{{appdir}}/$name"
         # `cp` rather than `install -D` per file: a published app has subdirectories
         # (satellite assemblies, native libraries) and they have to keep their shape.
-        cp -r "$staged/." "{{appdir}}/$name/"
+        cp -r "$published/." "{{appdir}}/$name/"
         chmod 755 "{{appdir}}/$name/$launcher"
-        rm -rf "$staged"
 
         install -d "{{bindir}}"
         # Unlinked first, because `>` follows a symlink and writes through it. wlrix-apps'
@@ -706,4 +747,4 @@ clean:
     for r in {{rust_repos}} {{lib_repos}}; do (cd "$r" && cargo clean); done
     for r in {{c_repos}}; do (cd "$r" && just clean); done
     for r in {{cs_repos}}; do (cd "$r" && dotnet clean -v q --nologo || true); done
-    rm -rf wlrix-apps/localfeed
+    rm -rf wlrix-apps/localfeed {{publishdir}}

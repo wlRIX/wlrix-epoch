@@ -75,6 +75,10 @@ four apps is a lot of megabytes for a desktop already built from source. They ar
 detected from the SDK and overridable with `RID=`. Avalonia carries native libraries for every platform it supports, and
 a publish that names none copies all of them — 550 MB per app against 26 MB.
 
+`build-cs` does the publishing, into `publish/<app>/` here, and `install-cs` only copies from there. A publish run by
+`sudo just install` would leave root-owned `bin/` and `obj/` trees in `wlrix-apps`, and every later build as yourself
+would fail on them. `RID=` therefore applies to `build-cs`, not to `install-cs`.
+
 ### The local package feed
 
 `wlrix-apps` restores from `wlrix-apps/localfeed` as well as nuget.org, for packages nuget.org does not have: the wlRIX
