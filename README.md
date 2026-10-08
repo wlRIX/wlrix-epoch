@@ -31,7 +31,7 @@ What lands:
 | Path                                                                                                                                      |                                                               |
 |-------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
 | `$PREFIX/bin/wlrix-{compositor,greeter,session,desktop,bg,idle,lock,tray,screenshot,settings-daemon}`                                     | the Rust components                                           |
-| `$PREFIX/bin/wlrix-{toolchest,desks,console,settings-keyboard,settings-windows,settings-displays,settings-schemes,source-picker,software-manager,shutdown}` | wrappers for the C# apps |
+| `$PREFIX/bin/wlrix-{toolchest,desks,console,settings-keyboard,settings-windows,settings-displays,settings-audio,settings-schemes,source-picker,software-manager,shutdown}` | wrappers for the C# apps |
 | `$PREFIX/lib/wlrix/<app>/`                                                                                                                | each C# app's published assemblies                            |
 | `$PREFIX/share/wayland-sessions/wlrix.desktop`                                                                                            | the session entry a display manager offers                    |
 | `$PREFIX/lib/xdg-desktop-portal-wlrix` (+ 4 data files)                                                                                   | the portal backend, bus-activated rather than started by name |
