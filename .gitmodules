@@ -70,3 +70,7 @@
 	path = wlrix-lock
 	url = https://github.com/wlRIX/wlrix-lock.git
 	branch = master
+[submodule "wlrix-clipboard"]
+	path = wlrix-clipboard
+	url = https://github.com/wlRIX/wlrix-clipboard.git
+	branch = master

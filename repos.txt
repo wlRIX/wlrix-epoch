@@ -11,6 +11,7 @@ wlrix-settings-daemon rust      settings service (the only writer of the wlRIX c
 xdg-desktop-portal-wlrix  rust  xdg-desktop-portal backend (screen sharing and screenshots)
 wlrix-screenshot      rust      screenshots (region overlay, save and clipboard)
 wlrix-tray            rust      application indicator tray (StatusNotifierItem host)
+wlrix-clipboard       rust      clipboard history daemon (wlr-data-control; the popup is in wlrix-apps)
 
 wlrix-gtk-config      c         GTK 3 module (reloads the user gtk.css on a scheme change; 30px headerbars)
 

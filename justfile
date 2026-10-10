@@ -18,7 +18,7 @@ base := "https://github.com/wlRIX"
 # by xdg-desktop-portal's backend discovery, not chosen. It installs five files of its own --
 # a .portal, a portals.conf, a D-Bus activation file and a systemd unit alongside the binary --
 # which is exactly the knowledge the comment above says to keep in the component.
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-lock wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray"
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-lock wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray wlrix-clipboard"
 
 # The Rust library the components share. Separate from `rust_repos` because it is a library:
 # it installs nothing, so it has no place in `install`, and it ships inside the binaries that
@@ -58,7 +58,7 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history"
 
 # The privileged helper, in the same `<project>:<installed name>` shape so it can be published
 # by the same loop -- but kept out of `cs_apps` because it is not one. Nothing launches it from
@@ -404,6 +404,7 @@ check-schema:
     check xdg-desktop-portal-wlrix portal
     check wlrix-screenshot screenshot
     check wlrix-tray tray
+    check wlrix-clipboard clipboard
     check wlrix-apps files wlrix-apps/src/Wlrix.Files/bin/Release/net10.0/wlrix-files
     [ "$fail" -eq 0 ] && echo "the settings schema matches every component's config types"
     exit "$fail"

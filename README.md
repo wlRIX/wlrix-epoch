@@ -112,6 +112,7 @@ Components aggregated here (added as submodules once they have remotes — see
 | `xdg-desktop-portal-wlrix` | Rust     | portal backend (screen sharing)             |
 | `wlrix-screenshot`         | Rust     | screenshots (region overlay)                |
 | `wlrix-tray`               | Rust     | application indicator tray (SNI host)       |
+| `wlrix-clipboard`          | Rust     | clipboard history daemon                    |
 | `wlrix-avalonia`           | C#       | Avalonia theme library                      |
 | `wlrix-apps`               | C#       | user apps (toolchest, desks, …)             |
 | `wlrix-assets`             | data     | shared icons/cursors/wallpapers/palette     |
