@@ -9,7 +9,7 @@ from upstream Avalonia assembling its own packages with Nuke rather than with pa
     the apps would try to restore a package that is not published on its own.
 2.  `-p:PackageVersion=` propagates to project references, so the dependency versions come out
     matching the *package's* version instead of the version the code was built from. They have
-    to say 12.1.0 -- the tag the fork branches off, and what the assembly references resolve to.
+    to say 12.1.4 -- the tag the fork branches off, and what the assembly references resolve to.
 
 So the package is produced by pack and its nuspec is then rewritten to the shape upstream's own
 `Avalonia.Wayland` has. Nothing else in the package is touched.
@@ -26,9 +26,9 @@ import sys
 import tempfile
 import zipfile
 
-# The Avalonia release the fork branches from. The built assembly references `Avalonia.* 12.1.0`,
+# The Avalonia release the fork branches from. The built assembly references `Avalonia.* 12.1.4`,
 # so the package has to ask for the same or the app loads a version its code was not built for.
-BASE_VERSION = "12.1.0"
+BASE_VERSION = "12.1.4"
 
 # What upstream's own Avalonia.Wayland declares, once numerge has folded the rest of the
 # Avalonia libraries into the `Avalonia` package.
@@ -54,7 +54,7 @@ def source_version(source: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", required=True, help="the Avalonia fork checkout")
-    parser.add_argument("--version", required=True, help="package version, e.g. 12.1.1-wlrix.1")
+    parser.add_argument("--version", required=True, help="package version, e.g. 12.1.5-wlrix.1")
     parser.add_argument("--out", required=True, help="the localfeed directory")
     args = parser.parse_args()
 

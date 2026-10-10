@@ -37,7 +37,7 @@
 [submodule "Avalonia"]
 	path = Avalonia
 	url = https://github.com/wlRIX/Avalonia.git
-	branch = wlrix-12.1.0
+	branch = wlrix-12.1.4
 [submodule "xdg-desktop-portal-wlrix"]
 	path = xdg-desktop-portal-wlrix
 	url = https://github.com/wlRIX/xdg-desktop-portal-wlrix.git

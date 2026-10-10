@@ -78,7 +78,7 @@ pam_flavor := env("PAM_FLAVOR", "arch")
 
 # The patched Avalonia.Wayland the apps pin. Keep in step with
 # wlrix-apps/Directory.Packages.props; `feed` builds exactly this version.
-wayland_version := "12.1.1-wlrix.10"
+wayland_version := "12.1.5-wlrix.1"
 
 # Which platform the apps are published for. Avalonia carries native libraries for every
 # platform it supports -- Windows, macOS, Android, several Linux architectures -- and a publish
@@ -128,7 +128,7 @@ init:
     done
     # The forks are not under the wlRIX org's naming, and Avalonia is on a branch of its own.
     git submodule add -b master https://github.com/wlRIX/NWayland.git NWayland || true
-    git submodule add -b add-wayland-app-id https://github.com/wlRIX/Avalonia.git Avalonia || true
+    git submodule add -b wlrix-12.1.4 https://github.com/wlRIX/Avalonia.git Avalonia || true
     git submodule update --init --recursive
 
 # Build everything.
@@ -443,9 +443,9 @@ build-c:
 # Assemble wlrix-apps/localfeed: the packages the apps need that nuget.org does not have.
 #
 # Two kinds. The wlRIX theme and dialogs come straight out of `wlrix-avalonia`. The patched
-# `Avalonia.Wayland` -- app id support, and `CanResize=false` on the wire so the compositor can
-# drop a fixed-size window's maximize button -- has to be reshaped after packing; see
-# `tools/pack-avalonia-wayland.py` for why.
+# `Avalonia.Wayland` -- `CanResize=false` on the wire so the compositor can drop a fixed-size
+# window's maximize button, xdg-activation, drag icons, and popup grabs -- has to be reshaped
+# after packing; see `tools/pack-avalonia-wayland.py` for why.
 #
 # The feed is committed in wlrix-apps, so a fresh checkout already restores and this is only
 # needed after changing `wlrix-avalonia` or the Avalonia fork -- and whatever it writes has to be

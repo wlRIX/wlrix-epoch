@@ -82,9 +82,9 @@ would fail on them. `RID=` therefore applies to `build-cs`, not to `install-cs`.
 ### The local package feed
 
 `wlrix-apps` restores from `wlrix-apps/localfeed` as well as nuget.org, for packages nuget.org does not have: the wlRIX
-theme and dialogs out of `wlrix-avalonia`, and a **patched `Avalonia.Wayland`** carrying app-id support and
-`CanResize=false` on the wire. The feed is gitignored, so a fresh clone has to build it — `just feed`, which `build-cs`
-depends on.
+theme and dialogs out of `wlrix-avalonia`, and a **patched `Avalonia.Wayland`** carrying `CanResize=false` on the
+wire, xdg-activation, drag icons, and popup grabs. The feed is gitignored, so a fresh clone has to build it —
+`just feed`, which `build-cs` depends on.
 
 The patched package cannot come straight out of `dotnet pack`; `tools/pack-avalonia-wayland.py` explains why and does
 the reshaping. It refuses to build from an Avalonia checkout whose version is not the release the apps pin, because the
@@ -116,7 +116,7 @@ Components aggregated here (added as submodules once they have remotes — see
 | `wlrix-apps`               | C#       | user apps (toolchest, desks, …)             |
 | `wlrix-assets`             | data     | shared icons/cursors/wallpapers/palette     |
 | `NWayland`                 | C#       | fork: protocol codegen + wlrix-desks XML    |
-| `Avalonia`                 | C#       | fork: Wayland app id, CanResize on the wire |
+| `Avalonia`                 | C#       | fork: Wayland CanResize, activation, grabs  |
 
 The last two are **build dependencies**, not parts of the desktop: nothing from them is installed except by way of
 `wlrix-apps`. They are submodules here rather than sibling clones because `Wlrix.Desks.csproj` reaches the NWayland
