@@ -12,12 +12,14 @@ xdg-desktop-portal-wlrix  rust  xdg-desktop-portal backend (screen sharing and s
 wlrix-screenshot      rust      screenshots (region overlay, save and clipboard)
 wlrix-tray            rust      application indicator tray (StatusNotifierItem host)
 wlrix-clipboard       rust      clipboard history daemon (wlr-data-control; the popup is in wlrix-apps)
+wlrix-sound           rust      system sounds daemon (XDG sound themes through PipeWire; com.wlrix.Sound)
 
 wlrix-gtk-config      c         GTK 3 module (reloads the user gtk.css on a scheme change; 30px headerbars)
 
 wlrix-avalonia        csharp    Avalonia theme library (Indigo Magic look)
 wlrix-apps            csharp    user apps (toolchest, desks, ...)
 wlrix-assets          data      shared icons/cursors/wallpapers/palette
+wlrix-sounds          data      the wlrix sound theme (IRIX soundscheme; not under wlRIX's licenses)
 
 # Upstream forks the C# side builds against. Build dependencies rather than parts of the
 # desktop: nothing from them is installed except by way of wlrix-apps. They sit beside the

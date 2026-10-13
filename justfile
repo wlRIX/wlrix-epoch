@@ -18,7 +18,7 @@ base := "https://github.com/wlRIX"
 # by xdg-desktop-portal's backend discovery, not chosen. It installs five files of its own --
 # a .portal, a portals.conf, a D-Bus activation file and a systemd unit alongside the binary --
 # which is exactly the knowledge the comment above says to keep in the component.
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-lock wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray wlrix-clipboard"
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-lock wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray wlrix-clipboard wlrix-sound"
 
 # The Rust library the components share. Separate from `rust_repos` because it is a library:
 # it installs nothing, so it has no place in `install`, and it ships inside the binaries that
@@ -37,15 +37,18 @@ cs_repos   := "wlrix-avalonia wlrix-apps"
 # without making any safer. Its own justfile builds it with `cc`; there is no cargo here.
 c_repos    := "wlrix-gtk-config"
 
-# The data repos, which install themselves the same way the components do. Only one so far, and
-# it installs its wallpapers, its minimized-window icon pictures, the sgi cursor theme and the
+# The data repos, which install themselves the same way the components do. `wlrix-assets`
+# installs its wallpapers, its minimized-window icon pictures, the sgi cursor theme and the
 # wlrix icon theme -- see its own justfile for why the palette is deliberately left out.
+# `wlrix-sounds` installs the wlrix sound theme, the IRIX soundscheme; it is a repo of its own
+# because the sounds are not under wlRIX's licenses (see its README).
 #
-# It has no build step, so it is absent from `build` and present here: `wlrix-bg`'s default config
-# names `share/wlrix/wallpapers/scatter.png` and the compositor's names the `sgi` cursor theme, so
-# without this the desktop of a fresh install comes up plain gray, with a stranger's pointer over
-# it and two lines in the log about what is missing.
-data_repos := "wlrix-assets"
+# They have no build step, so they are absent from `build` and present here: `wlrix-bg`'s default
+# config names `share/wlrix/wallpapers/scatter.png`, the compositor's names the `sgi` cursor theme
+# and `wlrix-sound`'s names the `wlrix` sound theme, so without these the desktop of a fresh
+# install comes up plain gray, with a stranger's pointer over it, the stock freedesktop sounds,
+# and lines in the log about what is missing.
+data_repos := "wlrix-assets wlrix-sounds"
 
 # Upstream forks the C# side builds against, carrying patches not yet upstream. Submodules like
 # the components, but they are build dependencies rather than parts of the desktop -- nothing
@@ -58,7 +61,7 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Sound:wlrix-settings-sound Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer"
 
 # The privileged helper, in the same `<project>:<installed name>` shape so it can be published
 # by the same loop -- but kept out of `cs_apps` because it is not one. Nothing launches it from
@@ -123,7 +126,7 @@ default:
 init:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{rust_repos}} {{lib_repos}} {{c_repos}} {{cs_repos}} wlrix-assets; do
+    for r in {{rust_repos}} {{lib_repos}} {{c_repos}} {{cs_repos}} {{data_repos}}; do
         git submodule add {{base}}/$r.git $r || true
     done
     # The forks are not under the wlRIX org's naming, and Avalonia is on a branch of its own.

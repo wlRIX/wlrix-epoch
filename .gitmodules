@@ -74,3 +74,11 @@
 	path = wlrix-clipboard
 	url = https://github.com/wlRIX/wlrix-clipboard.git
 	branch = master
+[submodule "wlrix-sound"]
+	path = wlrix-sound
+	url = https://github.com/wlRIX/wlrix-sound.git
+	branch = master
+[submodule "wlrix-sounds"]
+	path = wlrix-sounds
+	url = https://github.com/wlRIX/wlrix-sounds.git
+	branch = master
