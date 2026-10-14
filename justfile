@@ -61,19 +61,21 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Sound:wlrix-settings-sound Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Sound:wlrix-settings-sound Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.Settings.Login:wlrix-settings-login Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer"
 
-# The privileged helper, in the same `<project>:<installed name>` shape so it can be published
-# by the same loop -- but kept out of `cs_apps` because it is not one. Nothing launches it from
-# a menu or the session; only the Software Manager does, through pkexec, and only ever at the
-# absolute path its polkit action names. See `polkit_policy`.
-cs_helpers := "Wlrix.Packages.Helper:wlrix-pkg-helper"
+# The privileged helpers, in the same `<project>:<installed name>` shape so they can be published
+# by the same loop -- but kept out of `cs_apps` because they are not apps. Nothing launches them
+# from a menu or the session; only their own app does, through pkexec, and only ever at the
+# absolute path its polkit action names. See `polkit_policies`.
+#
+#   wlrix-pkg-helper     the Software Manager's package transactions
+#   wlrix-login-helper   Login Settings' writes to /etc/wlrix/greeter.toml
+cs_helpers := "Wlrix.Packages.Helper:wlrix-pkg-helper Wlrix.Settings.Login.Helper:wlrix-login-helper"
 
-# The polkit action that lets the Software Manager run that helper as root. Without it installed
-# the app runs, browses and does nothing else: `PkexecRunner` refuses to start a transaction it
-# cannot find the helper for, and polkit would fall back to prompting for the admin password on
-# every single one.
-polkit_policy := "wlrix-apps/src/Wlrix.Packages.Helper/polkit/com.wlrix.softwaremanager.policy"
+# The polkit actions that let those apps run their helpers as root. Without one installed its app
+# runs, shows what it would change and does nothing else: the runner refuses to start without the
+# helper, and polkit would fall back to prompting for the admin password every single time.
+polkit_policies := "wlrix-apps/src/Wlrix.Packages.Helper/polkit/com.wlrix.softwaremanager.policy wlrix-apps/src/Wlrix.Settings.Login.Helper/polkit/com.wlrix.settings.login.policy"
 
 # Which distribution's PAM stack the components that ship one should install. Passed through
 # to their own justfiles; `arch` and `debian` are not interchangeable and nothing is detected.
@@ -676,19 +678,23 @@ install-cs:
         echo "warning: wlrix-apps has no install-desktop recipe; no file types registered" >&2
     fi
 
-    # The polkit action for the helper just installed. 644 and root-owned: polkit reads it, and
-    # an action file a user could edit would let them rewrite the rules that gate root.
+    # The polkit actions for the helpers just installed. 644 and root-owned: polkit reads them,
+    # and an action file a user could edit would let them rewrite the rules that gate root.
     #
-    # Its `exec.path` annotation is the literal `/usr/bin/wlrix-pkg-helper`, which is also what
-    # `PkexecRunner` looks for -- neither is prefix-aware, so under any other prefix the two
-    # agree with each other and disagree with where the helper actually is.
+    # Their `exec.path` annotations are the literal `/usr/bin/wlrix-pkg-helper` and
+    # `/usr/bin/wlrix-login-helper`, which is also where the apps look -- neither side is
+    # prefix-aware, so under any other prefix the two agree with each other and disagree with
+    # where the helpers actually are.
     if [ "{{prefix}}" != "/usr" ]; then
-        echo "warning: PREFIX={{prefix}}, but the polkit action and the Software Manager both" >&2
-        echo "         name /usr/bin/wlrix-pkg-helper. Package management will not work." >&2
+        echo "warning: PREFIX={{prefix}}, but the polkit actions and their apps name" >&2
+        echo "         /usr/bin/wlrix-pkg-helper and /usr/bin/wlrix-login-helper. Package" >&2
+        echo "         management and Login Settings will not be able to change anything." >&2
     fi
     install -d "{{polkitdir}}"
-    install -m 644 "{{polkit_policy}}" "{{polkitdir}}/"
-    echo "installed {{polkitdir}}/$(basename {{polkit_policy}})"
+    for policy in {{polkit_policies}}; do
+        install -m 644 "$policy" "{{polkitdir}}/"
+        echo "installed {{polkitdir}}/$(basename "$policy")"
+    done
 
 # Warn if PATH would find some other copy of a component before the one just installed.
 #
@@ -735,7 +741,9 @@ uninstall:
     if (cd wlrix-apps && just --show uninstall) >/dev/null 2>&1; then
         (cd wlrix-apps && just rootdir='{{sub_rootdir}}' prefix='{{prefix}}' uninstall)
     fi
-    rm -f "{{polkitdir}}/$(basename {{polkit_policy}})"
+    for policy in {{polkit_policies}}; do
+        rm -f "{{polkitdir}}/$(basename "$policy")"
+    done
     # Only if this left it empty: the prefix may be shared with something else.
     rmdir "{{appdir}}" 2>/dev/null || true
     echo "removed the wlRIX binaries, apps and session entry"
