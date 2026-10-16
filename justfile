@@ -112,6 +112,11 @@ bindir     := destdir + prefix + "/bin"
 # apps live here and `bindir` gets a shell wrapper for each.
 appdir     := destdir + prefix + "/lib/wlrix"
 polkitdir  := destdir + prefix + "/share/polkit-1/actions"
+# gpg-agent's system-wide config. Under /etc whatever the prefix, as GnuPG looks for it there.
+gnupg_conf := destdir + "/etc/gnupg/gpg-agent.conf"
+# What install-cs writes there, from a template so the path follows the prefix. uninstall regenerates
+# it to tell an untouched copy from one an administrator has edited.
+gnupg_conf_src := "wlrix-apps/src/Wlrix.Pinentry/data/gpg-agent.conf.in"
 
 # Where `build-cs` publishes each C# application, one directory per installed name, for
 # `install-cs` to copy from. Here in the epoch rather than in each project's bin/, so the whole
@@ -696,6 +701,24 @@ install-cs:
         echo "installed {{polkitdir}}/$(basename "$policy")"
     done
 
+    # wlrix-pinentry as gpg-agent's default, for every user who has not chosen their own. Written
+    # only where there is no such file yet: an existing one is the administrator's, and holds
+    # settings this knows nothing about. wlrix-pinentry steps aside in other desktops' sessions,
+    # which is what makes a machine-wide default safe.
+    if [ -f "{{gnupg_conf_src}}" ]; then
+        if [ -e "{{gnupg_conf}}" ]; then
+            if ! grep -qs '^[[:space:]]*pinentry-program[[:space:]]' "{{gnupg_conf}}"; then
+                echo "note: {{gnupg_conf}} exists, so it was left alone. To make wlrix-pinentry" >&2
+                echo "      the default, add:  pinentry-program {{prefix}}/bin/wlrix-pinentry" >&2
+            fi
+        else
+            install -d "$(dirname "{{gnupg_conf}}")"
+            sed 's|@BINDIR@|{{prefix}}/bin|' "{{gnupg_conf_src}}" > "{{gnupg_conf}}"
+            chmod 644 "{{gnupg_conf}}"
+            echo "installed {{gnupg_conf}}"
+        fi
+    fi
+
 # Warn if PATH would find some other copy of a component before the one just installed.
 #
 # Everything here starts everything else by name -- greetd runs `start-wlrix`, that runs
@@ -744,6 +767,14 @@ uninstall:
     for policy in {{polkit_policies}}; do
         rm -f "{{polkitdir}}/$(basename "$policy")"
     done
+    # gpg-agent's default, only if it is still exactly what install-cs wrote: an edited file is
+    # the administrator's now.
+    if [ -f "{{gnupg_conf}}" ] && [ -f "{{gnupg_conf_src}}" ] \
+        && sed 's|@BINDIR@|{{prefix}}/bin|' "{{gnupg_conf_src}}" | cmp -s - "{{gnupg_conf}}"; then
+        rm -f "{{gnupg_conf}}"
+        rmdir "$(dirname "{{gnupg_conf}}")" 2>/dev/null || true
+        echo "removed {{gnupg_conf}}"
+    fi
     # Only if this left it empty: the prefix may be shared with something else.
     rmdir "{{appdir}}" 2>/dev/null || true
     echo "removed the wlRIX binaries, apps and session entry"
