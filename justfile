@@ -61,7 +61,7 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Sound:wlrix-settings-sound Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.Settings.Login:wlrix-settings-login Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Mouse:wlrix-settings-mouse Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Sound:wlrix-settings-sound Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.Settings.Login:wlrix-settings-login Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.PolkitAgent:wlrix-polkit-agent Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer"
 
 # The privileged helpers, in the same `<project>:<installed name>` shape so they can be published
 # by the same loop -- but kept out of `cs_apps` because they are not apps. Nothing launches them
@@ -83,7 +83,7 @@ pam_flavor := env("PAM_FLAVOR", "arch")
 
 # The patched Avalonia.Wayland the apps pin. Keep in step with
 # wlrix-apps/Directory.Packages.props; `feed` builds exactly this version.
-wayland_version := "12.1.5-wlrix.1"
+wayland_version := "12.1.5-wlrix.2"
 
 # Which platform the apps are published for. Avalonia carries native libraries for every
 # platform it supports -- Windows, macOS, Android, several Linux architectures -- and a publish
