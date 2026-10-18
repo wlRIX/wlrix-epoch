@@ -82,3 +82,7 @@
 	path = wlrix-sounds
 	url = https://github.com/wlRIX/wlrix-sounds.git
 	branch = master
+[submodule "wlrix-osd"]
+	path = wlrix-osd
+	url = https://github.com/wlRIX/wlrix-osd.git
+	branch = master

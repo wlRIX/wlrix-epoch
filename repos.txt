@@ -13,6 +13,7 @@ wlrix-screenshot      rust      screenshots (region overlay, save and clipboard)
 wlrix-tray            rust      application indicator tray (StatusNotifierItem host)
 wlrix-clipboard       rust      clipboard history daemon (wlr-data-control; the popup is in wlrix-apps)
 wlrix-sound           rust      system sounds daemon (XDG sound themes through PipeWire; com.wlrix.Sound)
+wlrix-osd             rust      notifications (org.freedesktop.Notifications, drawn as 4Dwm windows; replaces mako)
 
 wlrix-gtk-config      c         GTK 3 module (reloads the user gtk.css on a scheme change; 30px headerbars)
 
