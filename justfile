@@ -18,7 +18,7 @@ base := "https://github.com/wlRIX"
 # by xdg-desktop-portal's backend discovery, not chosen. It installs five files of its own --
 # a .portal, a portals.conf, a D-Bus activation file and a systemd unit alongside the binary --
 # which is exactly the knowledge the comment above says to keep in the component.
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-lock wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray wlrix-clipboard wlrix-sound wlrix-osd"
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-lock wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray wlrix-clipboard wlrix-sound wlrix-osd wlrix-network"
 
 # The Rust library the components share. Separate from `rust_repos` because it is a library:
 # it installs nothing, so it has no place in `install`, and it ships inside the binaries that
@@ -416,6 +416,7 @@ check-schema:
     check wlrix-tray tray
     check wlrix-clipboard clipboard
     check wlrix-osd osd
+    check wlrix-network network
     check wlrix-apps files wlrix-apps/src/Wlrix.Files/bin/Release/net10.0/wlrix-files
     [ "$fail" -eq 0 ] && echo "the settings schema matches every component's config types"
     exit "$fail"

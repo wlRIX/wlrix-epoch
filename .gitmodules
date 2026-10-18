@@ -86,3 +86,7 @@
 	path = wlrix-osd
 	url = https://github.com/wlRIX/wlrix-osd.git
 	branch = master
+[submodule "wlrix-network"]
+	path = wlrix-network
+	url = https://github.com/wlRIX/wlrix-network.git
+	branch = master
