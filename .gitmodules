@@ -90,3 +90,7 @@
 	path = wlrix-network
 	url = https://github.com/wlRIX/wlrix-network.git
 	branch = master
+[submodule "wlrix-power"]
+	path = wlrix-power
+	url = https://github.com/wlRIX/wlrix-power.git
+	branch = master
