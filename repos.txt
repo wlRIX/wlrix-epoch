@@ -16,6 +16,7 @@ wlrix-sound           rust      system sounds daemon (XDG sound themes through P
 wlrix-osd             rust      notifications (org.freedesktop.Notifications, drawn as 4Dwm windows; replaces mako)
 wlrix-network         rust      network status (NetworkManager's Wi-Fi state as a tray icon)
 wlrix-power           rust      power status (UPower's battery as a tray icon, low-battery warnings, power modes)
+wlrix-bluetooth       rust      Bluetooth status (BlueZ's adapter and devices as a tray icon, and the pairing agent)
 
 wlrix-gtk-config      c         GTK 3 module (reloads the user gtk.css on a scheme change; 30px headerbars)
 

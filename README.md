@@ -30,8 +30,8 @@ What lands:
 
 | Path                                                                                                                                      |                                                               |
 |-------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
-| `$PREFIX/bin/wlrix-{compositor,greeter,session,desktop,bg,idle,lock,tray,screenshot,settings-daemon,clipboard,sound,osd,network,power}`   | the Rust components                                           |
-| `$PREFIX/bin/wlrix-{toolchest,desks,console,settings-keyboard,settings-mouse,settings-network,settings-power,settings-windows,settings-displays,settings-audio,settings-sound,settings-schemes,source-picker,software-manager,shutdown,network-prompt}` | wrappers for the C# apps |
+| `$PREFIX/bin/wlrix-{compositor,greeter,session,desktop,bg,idle,lock,tray,screenshot,settings-daemon,clipboard,sound,osd,network,power,bluetooth}`   | the Rust components                                           |
+| `$PREFIX/bin/wlrix-{toolchest,desks,console,settings-keyboard,settings-mouse,settings-network,settings-bluetooth,settings-power,settings-windows,settings-displays,settings-audio,settings-sound,settings-schemes,source-picker,software-manager,shutdown,network-prompt,bluetooth-prompt}` | wrappers for the C# apps |
 | `$PREFIX/lib/wlrix/<app>/`                                                                                                                | each C# app's published assemblies                            |
 | `$PREFIX/share/wayland-sessions/wlrix.desktop`                                                                                            | the session entry a display manager offers                    |
 | `$PREFIX/lib/xdg-desktop-portal-wlrix` (+ 4 data files)                                                                                   | the portal backend, bus-activated rather than started by name |
@@ -125,6 +125,7 @@ Components aggregated here (added as submodules once they have remotes — see
 | `wlrix-osd`                | Rust     | notifications (replaces mako/dunst)         |
 | `wlrix-network`            | Rust     | network status (Wi-Fi icon in the tray)     |
 | `wlrix-power`              | Rust     | power status (battery icon in the tray)     |
+| `wlrix-bluetooth`          | Rust     | Bluetooth status and pairing agent          |
 | `wlrix-avalonia`           | C#       | Avalonia theme library                      |
 | `wlrix-apps`               | C#       | user apps (toolchest, desks, …)             |
 | `wlrix-assets`             | data     | shared icons/cursors/wallpapers/palette     |

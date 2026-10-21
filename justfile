@@ -18,7 +18,7 @@ base := "https://github.com/wlRIX"
 # by xdg-desktop-portal's backend discovery, not chosen. It installs five files of its own --
 # a .portal, a portals.conf, a D-Bus activation file and a systemd unit alongside the binary --
 # which is exactly the knowledge the comment above says to keep in the component.
-rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-lock wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray wlrix-clipboard wlrix-sound wlrix-osd wlrix-network wlrix-power"
+rust_repos := "wlrix-compositor wlrix-greeter wlrix-session wlrix-desktop wlrix-bg wlrix-idle wlrix-lock wlrix-settings-daemon xdg-desktop-portal-wlrix wlrix-screenshot wlrix-tray wlrix-clipboard wlrix-sound wlrix-osd wlrix-network wlrix-power wlrix-bluetooth"
 
 # The Rust library the components share. Separate from `rust_repos` because it is a library:
 # it installs nothing, so it has no place in `install`, and it ships inside the binaries that
@@ -61,7 +61,7 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Mouse:wlrix-settings-mouse Wlrix.Settings.Network:wlrix-settings-network Wlrix.Settings.Power:wlrix-settings-power Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Sound:wlrix-settings-sound Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.Settings.Login:wlrix-settings-login Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.PolkitAgent:wlrix-polkit-agent Wlrix.Pinentry:wlrix-pinentry Wlrix.NetworkPrompt:wlrix-network-prompt Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Mouse:wlrix-settings-mouse Wlrix.Settings.Network:wlrix-settings-network Wlrix.Settings.Bluetooth:wlrix-settings-bluetooth Wlrix.Settings.Power:wlrix-settings-power Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Sound:wlrix-settings-sound Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.Settings.Login:wlrix-settings-login Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.PolkitAgent:wlrix-polkit-agent Wlrix.Pinentry:wlrix-pinentry Wlrix.NetworkPrompt:wlrix-network-prompt Wlrix.BluetoothPrompt:wlrix-bluetooth-prompt Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer"
 
 # The privileged helpers, in the same `<project>:<installed name>` shape so they can be published
 # by the same loop -- but kept out of `cs_apps` because they are not apps. Nothing launches them
@@ -418,6 +418,7 @@ check-schema:
     check wlrix-osd osd
     check wlrix-network network
     check wlrix-power power
+    check wlrix-bluetooth bluetooth
     check wlrix-apps files wlrix-apps/src/Wlrix.Files/bin/Release/net10.0/wlrix-files
     [ "$fail" -eq 0 ] && echo "the settings schema matches every component's config types"
     exit "$fail"

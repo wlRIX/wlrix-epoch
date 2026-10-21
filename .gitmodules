@@ -94,3 +94,7 @@
 	path = wlrix-power
 	url = https://github.com/wlRIX/wlrix-power.git
 	branch = master
+[submodule "wlrix-bluetooth"]
+	path = wlrix-bluetooth
+	url = https://github.com/wlRIX/wlrix-bluetooth.git
+	branch = master
