@@ -70,12 +70,13 @@ cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Consol
 #
 #   wlrix-pkg-helper     the Software Manager's package transactions
 #   wlrix-login-helper   Login Settings' writes to /etc/wlrix/greeter.toml
-cs_helpers := "Wlrix.Packages.Helper:wlrix-pkg-helper Wlrix.Settings.Login.Helper:wlrix-login-helper"
+#   wlrix-users-helper   User Accounts' fingerprint switches in /etc/pam.d/sudo and polkit-1
+cs_helpers := "Wlrix.Packages.Helper:wlrix-pkg-helper Wlrix.Settings.Login.Helper:wlrix-login-helper Wlrix.Settings.Users.Helper:wlrix-users-helper"
 
 # The polkit actions that let those apps run their helpers as root. Without one installed its app
 # runs, shows what it would change and does nothing else: the runner refuses to start without the
 # helper, and polkit would fall back to prompting for the admin password every single time.
-polkit_policies := "wlrix-apps/src/Wlrix.Packages.Helper/polkit/com.wlrix.softwaremanager.policy wlrix-apps/src/Wlrix.Settings.Login.Helper/polkit/com.wlrix.settings.login.policy"
+polkit_policies := "wlrix-apps/src/Wlrix.Packages.Helper/polkit/com.wlrix.softwaremanager.policy wlrix-apps/src/Wlrix.Settings.Login.Helper/polkit/com.wlrix.settings.login.policy wlrix-apps/src/Wlrix.Settings.Users.Helper/polkit/com.wlrix.settings.users.policy"
 
 # Which distribution's PAM stack the components that ship one should install. Passed through
 # to their own justfiles; `arch` and `debian` are not interchangeable and nothing is detected.
@@ -690,14 +691,15 @@ install-cs:
     # The polkit actions for the helpers just installed. 644 and root-owned: polkit reads them,
     # and an action file a user could edit would let them rewrite the rules that gate root.
     #
-    # Their `exec.path` annotations are the literal `/usr/bin/wlrix-pkg-helper` and
-    # `/usr/bin/wlrix-login-helper`, which is also where the apps look -- neither side is
-    # prefix-aware, so under any other prefix the two agree with each other and disagree with
-    # where the helpers actually are.
+    # Their `exec.path` annotations are the literal `/usr/bin/wlrix-pkg-helper`,
+    # `/usr/bin/wlrix-login-helper` and `/usr/bin/wlrix-users-helper`, which is also where the
+    # apps look -- neither side is prefix-aware, so under any other prefix the two agree with each
+    # other and disagree with where the helpers actually are.
     if [ "{{prefix}}" != "/usr" ]; then
         echo "warning: PREFIX={{prefix}}, but the polkit actions and their apps name" >&2
-        echo "         /usr/bin/wlrix-pkg-helper and /usr/bin/wlrix-login-helper. Package" >&2
-        echo "         management and Login Settings will not be able to change anything." >&2
+        echo "         /usr/bin/wlrix-{pkg,login,users}-helper. Package management, Login" >&2
+        echo "         Settings and User Accounts' fingerprint switches will not be able to" >&2
+        echo "         change anything." >&2
     fi
     install -d "{{polkitdir}}"
     for policy in {{polkit_policies}}; do
