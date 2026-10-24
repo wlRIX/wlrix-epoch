@@ -61,7 +61,7 @@ forks := "NWayland Avalonia"
 
 # The C# applications, as `<project>:<installed name>`. The installed name is what
 # `session.toml` and wlrix-session's defaults call them.
-cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.Mouse:wlrix-settings-mouse Wlrix.Settings.Network:wlrix-settings-network Wlrix.Settings.Bluetooth:wlrix-settings-bluetooth Wlrix.Settings.Power:wlrix-settings-power Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Sound:wlrix-settings-sound Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.Settings.Login:wlrix-settings-login Wlrix.Settings.Users:wlrix-settings-users Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.PolkitAgent:wlrix-polkit-agent Wlrix.Pinentry:wlrix-pinentry Wlrix.NetworkPrompt:wlrix-network-prompt Wlrix.BluetoothPrompt:wlrix-bluetooth-prompt Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer Wlrix.IconCatalog:wlrix-icon-catalog"
+cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Console:wlrix-console Wlrix.Settings.Keyboard:wlrix-settings-keyboard Wlrix.Settings.International:wlrix-settings-international Wlrix.Settings.Mouse:wlrix-settings-mouse Wlrix.Settings.Network:wlrix-settings-network Wlrix.Settings.Bluetooth:wlrix-settings-bluetooth Wlrix.Settings.Power:wlrix-settings-power Wlrix.Settings.Windows:wlrix-settings-windows Wlrix.Settings.Displays:wlrix-settings-displays Wlrix.Settings.Audio:wlrix-settings-audio Wlrix.Settings.Sound:wlrix-settings-sound Wlrix.Settings.Background:wlrix-settings-background Wlrix.Settings.Schemes:wlrix-settings-schemes Wlrix.Settings.Login:wlrix-settings-login Wlrix.Settings.Users:wlrix-settings-users Wlrix.SourcePicker:wlrix-source-picker Wlrix.FilePicker:wlrix-file-picker Wlrix.SoftwareManager:wlrix-software-manager Wlrix.Shutdown:wlrix-shutdown Wlrix.PolkitAgent:wlrix-polkit-agent Wlrix.Pinentry:wlrix-pinentry Wlrix.NetworkPrompt:wlrix-network-prompt Wlrix.BluetoothPrompt:wlrix-bluetooth-prompt Wlrix.Archiver:wlrix-archiver Wlrix.Files:wlrix-files Wlrix.Clock:wlrix-clock Wlrix.ClipboardHistory:wlrix-clipboard-history Wlrix.ImageView:wlrix-imageview Wlrix.Writer:wlrix-writer Wlrix.IconCatalog:wlrix-icon-catalog"
 
 # The privileged helpers, in the same `<project>:<installed name>` shape so they can be published
 # by the same loop -- but kept out of `cs_apps` because they are not apps. Nothing launches them
@@ -71,12 +71,13 @@ cs_apps := "Wlrix.Toolchest:wlrix-toolchest Wlrix.Desks:wlrix-desks Wlrix.Consol
 #   wlrix-pkg-helper     the Software Manager's package transactions
 #   wlrix-login-helper   Login Settings' writes to /etc/wlrix/greeter.toml
 #   wlrix-users-helper   User Accounts' fingerprint switches in /etc/pam.d/sudo and polkit-1
-cs_helpers := "Wlrix.Packages.Helper:wlrix-pkg-helper Wlrix.Settings.Login.Helper:wlrix-login-helper Wlrix.Settings.Users.Helper:wlrix-users-helper"
+#   wlrix-locale-helper  the International panel's locale generation (/etc/locale.gen, locale-gen)
+cs_helpers := "Wlrix.Packages.Helper:wlrix-pkg-helper Wlrix.Settings.Login.Helper:wlrix-login-helper Wlrix.Settings.Users.Helper:wlrix-users-helper Wlrix.Settings.International.Helper:wlrix-locale-helper"
 
 # The polkit actions that let those apps run their helpers as root. Without one installed its app
 # runs, shows what it would change and does nothing else: the runner refuses to start without the
 # helper, and polkit would fall back to prompting for the admin password every single time.
-polkit_policies := "wlrix-apps/src/Wlrix.Packages.Helper/polkit/com.wlrix.softwaremanager.policy wlrix-apps/src/Wlrix.Settings.Login.Helper/polkit/com.wlrix.settings.login.policy wlrix-apps/src/Wlrix.Settings.Users.Helper/polkit/com.wlrix.settings.users.policy"
+polkit_policies := "wlrix-apps/src/Wlrix.Packages.Helper/polkit/com.wlrix.softwaremanager.policy wlrix-apps/src/Wlrix.Settings.Login.Helper/polkit/com.wlrix.settings.login.policy wlrix-apps/src/Wlrix.Settings.Users.Helper/polkit/com.wlrix.settings.users.policy wlrix-apps/src/Wlrix.Settings.International.Helper/polkit/com.wlrix.settings.international.policy"
 
 # Which distribution's PAM stack the components that ship one should install. Passed through
 # to their own justfiles; `arch` and `debian` are not interchangeable and nothing is detected.
